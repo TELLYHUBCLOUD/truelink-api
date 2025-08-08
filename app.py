@@ -1,3 +1,4 @@
+import os
 import asyncio
 import logging
 from typing import Any, Optional
@@ -11,6 +12,10 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("truelink-api")
 
 app = FastAPI(title="Advanced TrueLink API", version="2.1", docs_url="/docs")
+
+port = int(os.environ.get("PORT", 5000))
+app.run(host="0.0.0.0", port=port)
+
 
 class BatchRequest(BaseModel):
     urls: list[str]
