@@ -1,18 +1,20 @@
-# Use official Python image
+# Use an official Python runtime as base image
 FROM python:3.11-slim
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
+# Set working directory
 WORKDIR /app
 
+# Copy dependency file first for better caching
 COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
+# Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy app code
 COPY . .
 
-EXPOSE 8000
+# Expose port (Render default is 10000, but we use $PORT)
+EXPOSE 10000
 
-# Use Gunicorn with Uvicorn worker for async support
-CMD ["gunicorn", "-b", "0.0.0.0:$PORT", "app:app"]
-
+# Command to run the app
+CMD ["python", "app.py"]
