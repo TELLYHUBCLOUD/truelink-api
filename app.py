@@ -70,6 +70,28 @@ async def health():
     logger.debug("Health check endpoint called")
     return {"status": "ok"}
 
+# ---------- help  ----------
+
+@app.get("/help")
+async def help_page():
+    """
+    Returns a list of available API endpoints with descriptions.
+    """
+    return {
+        "api": "Advanced TrueLink API v2.1",
+        "description": "Resolve URLs to direct download links using TrueLink.",
+        "endpoints": {
+            "/health": "Check API status.",
+            "/resolve": "Resolve a single URL. Query: url, timeout, retries, cache",
+            "/resolve-batch": "Resolve multiple URLs in one request (POST). Body: { urls: [..] }",
+            "/supported-domains": "List all supported domains.",
+            "/direct": "Get only the extracted direct download links for a URL.",
+            "/redirect": "Redirect directly to the first resolved direct link.",
+            "/download-stream": "Stream the resolved direct link content to the client.",
+            "/help": "Show this help page."
+        },
+        "note": "For detailed parameters and response formats, visit /docs"
+    }
 
 # ---------- Single Resolve ----------
 @app.get("/resolve")
@@ -119,28 +141,6 @@ async def supported_domains():
     except Exception as exc:
         logger.exception("Error listing supported domains")
         raise HTTPException(status_code=500, detail=str(exc))
-
-
-@app.get("/help")
-async def help_page():
-    """
-    Returns a list of available API endpoints with descriptions.
-    """
-    return {
-        "api": "Advanced TrueLink API v2.1",
-        "description": "Resolve URLs to direct download links using TrueLink.",
-        "endpoints": {
-            "/health": "Check API status.",
-            "/resolve": "Resolve a single URL. Query: url, timeout, retries, cache",
-            "/resolve-batch": "Resolve multiple URLs in one request (POST). Body: { urls: [..] }",
-            "/supported-domains": "List all supported domains.",
-            "/direct": "Get only the extracted direct download links for a URL.",
-            "/redirect": "Redirect directly to the first resolved direct link.",
-            "/download-stream": "Stream the resolved direct link content to the client.",
-            "/help": "Show this help page."
-        },
-        "note": "For detailed parameters and response formats, visit /docs"
-    }
 
 
 # ---------- Direct Link Extraction ----------
@@ -221,30 +221,54 @@ async def download_stream(
     logger.debug(f"Starting streaming download from {first}")
 
     session_timeout = aiohttp.ClientTimeout(total=None, sock_connect=timeout, sock_read=timeout)
-    async_session = aiohttp.ClientSession(timeout=session_timeout)
+    async_session = None
+    resp = None
     try:
+        async_session = aiohttp.ClientSession(timeout=session_timeout)
         resp = await async_session.get(first)
-    except Exception as exc:
-        await async_session.close()
-        logger.exception(f"Error fetching direct URL: {exc}")
-        raise HTTPException(status_code=502, detail=str(exc))
-
-    if resp.status != 200:
-        await async_session.close()
-        raise HTTPException(status_code=resp.status, detail=f"Upstream returned {resp.status}")
-
-    headers = {}
-    if resp.headers.get("Content-Type"):
-        headers["Content-Type"] = resp.headers["Content-Type"]
-    if resp.headers.get("Content-Length"):
-        headers["Content-Length"] = resp.headers["Content-Length"]
-
-    async def stream_generator():
-        try:
-            async for chunk in resp.content.iter_chunked(1024 * 64):
-                yield chunk
-        finally:
+        
+        if resp.status != 200:
+            detail = f"Upstream returned {resp.status}"
             await resp.release()
             await async_session.close()
+            raise HTTPException(status_code=resp.status, detail=detail)
 
-    return StreamingResponse(stream_generator(), headers=headers)
+        headers = {}
+        if resp.headers.get("Content-Type"):
+            headers["Content-Type"] = resp.headers["Content-Type"]
+        if resp.headers.get("Content-Length"):
+            headers["Content-Length"] = resp.headers["Content-Length"]
+
+        async def stream_generator():
+            try:
+                async for chunk in resp.content.iter_chunked(1024 * 64):
+                    yield chunk
+            except asyncio.CancelledError:
+                logger.warning(f"Client disconnected during stream: {first}")
+            except Exception as exc:
+                logger.error(f"Streaming error for {first}: {exc}")
+            finally:
+                try:
+                    if resp and not resp.closed:
+                        await resp.release()
+                finally:
+                    if async_session and not async_session.closed:
+                        await async_session.close()
+
+        return StreamingResponse(stream_generator(), headers=headers)
+    except HTTPException as he:
+        # Re-raise HTTPExceptions from status check
+        raise he
+    except Exception as exc:
+        logger.exception(f"Error in download_stream: {exc}")
+        try:
+            if resp and not resp.closed:
+                await resp.release()
+        except Exception as inner_exc:
+            logger.error(f"Error releasing response: {inner_exc}")
+        try:
+            if async_session and not async_session.closed:
+                await async_session.close()
+        except Exception as inner_exc:
+            logger.error(f"Error closing session: {inner_exc}")
+        raise HTTPException(status_code=500, detail=str(exc))
