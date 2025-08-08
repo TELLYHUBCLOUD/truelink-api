@@ -14,4 +14,5 @@ COPY . .
 EXPOSE 8000
 
 # Use Gunicorn with Uvicorn worker for async support
-CMD ["gunicorn", "app:app", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--workers", "1"]
+CMD ["gunicorn", "-b", "0.0.0.0:$PORT", "app:app"]
+
