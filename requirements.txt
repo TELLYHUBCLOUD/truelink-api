@@ -3,3 +3,4 @@ uvicorn
 truelink
 pydantic
 aiohttp
+python-multipart
