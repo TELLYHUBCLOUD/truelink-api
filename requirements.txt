@@ -4,3 +4,4 @@ truelink
 pydantic
 aiohttp
 python-multipart
+requests
