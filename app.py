@@ -12,6 +12,8 @@ import aiohttp
 from truelink import TrueLinkResolver
 import time
 import json
+from urllib.parse import quote
+from requests import Session
 
 # ---------- Configuration ----------
 class Config:
@@ -604,6 +606,75 @@ async def download_stream(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Streaming failed: {str(exc)}"
         )
+
+
+@app.get("/terabox")
+async def terabox_endpoint(
+    url: HttpUrl = Query(..., description="Terabox share link"),
+    ndus: str = Query(..., description="NDUS cookie value")
+):
+    """
+    Resolve Terabox link to a direct download link using fallback APIs.
+    """
+
+
+    user_agent = (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/114.0.0.0 Safari/537.36"
+    )
+
+    apis = [
+        f"https://nord.teraboxfast.com/?ndus={quote(ndus)}&url={quote(str(url))}",
+        f"https://teradl1.tellycloudapi.workers.dev/api/api1?url={quote(str(url))}",
+    ]
+
+    with Session() as session:
+        for api_url in apis:
+            try:
+                req = session.get(
+                    api_url, headers={"User-Agent": user_agent}, timeout=15
+                ).json()
+            except Exception:
+                continue  # Try next API
+
+            # Case 1: Direct link from first API
+            if (
+                "file_name" in req
+                and "sizebytes" in req
+                and "thumb" in req
+                and "link" in req
+                and "direct_link" in req
+            ):
+                return {
+                    "status": "success",
+                    "file_name": req["file_name"],
+                    "thumb": req["thumb"],
+                    "link": req["link"],
+                    "direct_link": req["direct_link"],
+                    "sizebytes": req["sizebytes"],
+                }
+
+            # Case 2: Fallback API format
+            if req.get("success") and "metadata" in req and "links" in req:
+                dl2 = req["links"].get("dl2")
+                dl1 = req["links"].get("dl1")
+                if dl1 or dl2:
+                    return {
+                        "status": "success",
+                        "file_name": req["metadata"].get("file_name"),
+                        "thumb": req["metadata"].get("thumb"),
+                        "size": req["metadata"].get("size"),
+                        "sizebytes": req["metadata"].get("sizebytes"),
+                        "dl1": dl1,
+                        "dl2": dl2,
+                    }
+
+    # If nothing worked
+    return {
+        "status": "error",
+        "message": "File not found or all API requests failed."
+    }
 
 # ---------- Root Endpoint ----------
 @app.get("/")
