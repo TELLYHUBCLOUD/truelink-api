@@ -13,6 +13,9 @@ RUN apt-get update && apt-get install -y \
 
 COPY requirements.txt .
 
+# Ensure pip is available
+RUN python3 -m ensurepip --upgrade
+
 # Always upgrade pip and install the latest truelink + requirements
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir --upgrade truelink && \
