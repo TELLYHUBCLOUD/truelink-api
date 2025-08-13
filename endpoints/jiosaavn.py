@@ -269,9 +269,7 @@ async def jiosaavn_get_songs(
         )
 
 @router.get("/jiosaavn/songs/{song_id}", response_model=JioSaavnResponse)
-async def jiosaavn_get_song_by_id(
-    song_id: str = Query(..., description="Song ID")
-):
+async def get_song(song_id: str = Path(..., description="The ID of the song")):
     """Get song by ID"""
     start_time = time.time()
     
