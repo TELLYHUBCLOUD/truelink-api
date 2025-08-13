@@ -11,6 +11,7 @@ from .supported_domains import router as supported_domains_router
 from .terabox import router as terabox_router
 from .root import router as root_router
 from .help import router as help_router
+from .jiosaavn import router as jiosaavn_router
 
 __all__ = [
     "health_router",
@@ -22,5 +23,6 @@ __all__ = [
     "supported_domains_router",
     "terabox_router",
     "root_router",
-    "help_router"
+    "help_router",
+    "jiosaavn_router"
 ]

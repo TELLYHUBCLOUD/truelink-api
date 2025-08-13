@@ -31,6 +31,7 @@ async def help_page():
             "/redirect": "Redirect to the first resolved direct link",
             "/download-stream": "Stream resolved content directly to client",
             "/terabox": "Resolve Terabox links with NDUS cookie",
+            "/jiosaavn/*": "JioSaavn music API endpoints for search and streaming",
             "/help": "Show this comprehensive help page",
             "/docs": "Interactive API documentation (Swagger UI)",
             "/redoc": "Alternative API documentation (ReDoc)"

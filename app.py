@@ -23,7 +23,8 @@ from endpoints import (
     supported_domains_router,
     terabox_router,
     root_router,
-    help_router
+    help_router,
+    jiosaavn_router
 )
 
 # ---------- Logging Setup ----------
@@ -107,6 +108,7 @@ app.include_router(redirect_router, tags=["Redirect"])
 app.include_router(download_stream_router, tags=["Streaming"])
 app.include_router(supported_domains_router, tags=["Domains"])
 app.include_router(terabox_router, tags=["Terabox"])
+app.include_router(jiosaavn_router, tags=["JioSaavn"])
 
 if __name__ == "__main__":
     import uvicorn

@@ -18,6 +18,7 @@ async def root():
             "Direct link extraction", 
             "Streaming downloads",
             "Terabox support",
+            "JioSaavn music API integration",
             "Comprehensive error handling"
         ]
     }
