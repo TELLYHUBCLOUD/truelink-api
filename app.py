@@ -4,6 +4,8 @@ import logging
 import time
 import json
 import psutil
+import re  # Added missing import
+import gc  # For garbage collection
 from typing import Any, Optional, Dict, List
 from contextlib import asynccontextmanager
 from urllib.parse import quote, urlparse
@@ -131,7 +133,6 @@ class TeraboxResponse(BaseModel):
 
 # ---------- Global Variables ----------
 app_start_time = time.time()
-resolver_instance = None
 
 # ---------- Utility Functions ----------
 def is_valid_url(url: str) -> bool:
@@ -368,30 +369,10 @@ async def resolve_single(
 # ---------- Lifespan Management ----------
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global resolver_instance
     logger.info("Starting TrueLink API...")
-    
-    # Initialize resolver if available
-    if TRUELINK_AVAILABLE:
-        try:
-            resolver_instance = TrueLinkResolver(
-                timeout=Config.DEFAULT_TIMEOUT,
-                max_retries=3
-            )
-            logger.info("TrueLink resolver initialized successfully")
-        except Exception as e:
-            logger.error(f"Failed to initialize TrueLink resolver: {e}")
-            resolver_instance = None
-    else:
-        logger.info("Using fallback resolver")
-        resolver_instance = FallbackResolver()
-    
     logger.info("TrueLink API started successfully")
     yield
-    
     logger.info("Shutting down TrueLink API...")
-    # Cleanup if needed
-    resolver_instance = None
 
 # ---------- FastAPI App ----------
 app = FastAPI(
@@ -472,6 +453,9 @@ async def health():
                 domains_count = len(FallbackResolver.get_supported_domains())
         except Exception as e:
             logger.warning(f"Could not get supported domains: {e}")
+        
+        # Perform garbage collection before memory check
+        gc.collect()
         
         return HealthResponse(
             status="healthy",
@@ -780,6 +764,9 @@ async def download_stream(
         content_type = response.headers.get("Content-Type")
         if content_type:
             headers["Content-Type"] = content_type
+        else:
+            # Fallback to octet-stream if content type is missing
+            headers["Content-Type"] = "application/octet-stream"
             
         content_length = response.headers.get("Content-Length")
         if content_length:
@@ -865,6 +852,7 @@ async def terabox_endpoint(
         "Chrome/114.0.0.0 Safari/537.36"
     )
 
+    # Updated Terabox API endpoints
     apis = [
         f"https://nord.teraboxfast.com/?ndus={quote(ndus)}&url={quote(str(url))}",
         f"https://teradl1.tellycloudapi.workers.dev/api/api1?url={quote(str(url))}",
@@ -931,6 +919,189 @@ async def terabox_endpoint(
         status="error",
         message="File not found or all API requests failed. Please check the URL and NDUS cookie."
     )
+
+@app.get("/jiosaavn", summary="Auto-resolve JioSaavn URL")
+async def jiosaavn_resolver(url: str = Query(..., description="Full JioSaavn song/album/playlist URL")):
+    """Resolve JioSaavn URLs to media content"""
+    try:
+        import re
+        import json
+        from urllib.parse import quote
+        import aiohttp
+
+        BASE_HEADERS = {"User-Agent": "Mozilla/5.0"}
+
+        async def fetch_json(api_url: str):
+            async with aiohttp.ClientSession() as session:
+                async with session.get(api_url, headers=BASE_HEADERS) as resp:
+                    if resp.status != 200:
+                        raise HTTPException(status_code=502, detail="Failed to fetch from JioSaavn")
+                    text = await resp.text()
+
+            json_match = re.search(r"\(({.*})\)", text)
+            if json_match:
+                return json.loads(json_match.group(1))
+            return json.loads(text)
+
+        if "song" in url:
+            match = re.search(r"/song/[^/]+/([\w\d]+)", url)
+            if not match:
+                raise HTTPException(status_code=400, detail="Invalid song URL")
+            song_id = match.group(1)
+            api_url = f"https://www.jiosaavn.com/api.php?__call=song.getDetails&pids={song_id}&_format=json"
+            data = await fetch_json(api_url)
+            song = list(data.values())[0]
+            media_url = song.get("media_preview_url", "").replace("_96_p", "")
+            audio_links = {
+                "96kbps": f"{media_url}_96.mp4",
+                "160kbps": f"{media_url}_160.mp4",
+                "320kbps": f"{media_url}_320.mp4",
+            }
+            return {
+                "type": "song",
+                "title": song.get("song"),
+                "album": song.get("album"),
+                "year": song.get("year"),
+                "image": song.get("image"),
+                "duration": song.get("duration"),
+                "artist": song.get("primary_artists"),
+                "audio_links": audio_links
+            }
+
+        elif "album" in url:
+            match = re.search(r"/album/[^/]+/([\w\d]+)", url)
+            if not match:
+                raise HTTPException(status_code=400, detail="Invalid album URL")
+            album_id = match.group(1)
+            api_url = f"https://www.jiosaavn.com/api.php?__call=content.getAlbumDetails&albumid={album_id}&_format=json"
+            return await fetch_json(api_url)
+
+        elif "playlist" in url:
+            match = re.search(r"/playlist/[^/]+/([\w\d]+)", url)
+            if not match:
+                raise HTTPException(status_code=400, detail="Invalid playlist URL")
+            playlist_id = match.group(1)
+            api_url = f"https://www.jiosaavn.com/api.php?__call=playlist.getDetails&listid={playlist_id}&_format=json"
+            return await fetch_json(api_url)
+
+        else:
+            raise HTTPException(status_code=400, detail="Unsupported JioSaavn link")
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"JioSaavn resolver error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error while processing JioSaavn request"
+        )
+
+
+@app.get("/jiosaavn/search", summary="Search JioSaavn")
+async def jiosaavn_search(
+    query: str = Query(..., description="Search query"), 
+    page: int = Query(1, description="Page number")
+):
+    """Search JioSaavn content"""
+    try:
+        from urllib.parse import quote
+        import json
+        import re
+        import aiohttp
+        
+        BASE_HEADERS = {"User-Agent": "Mozilla/5.0"}
+        
+        async def fetch_json(api_url: str):
+            async with aiohttp.ClientSession() as session:
+                async with session.get(api_url, headers=BASE_HEADERS) as resp:
+                    if resp.status != 200:
+                        raise HTTPException(status_code=502, detail="Failed to fetch search results")
+                    text = await resp.text()
+            json_match = re.search(r"\(({.*})\)", text)
+            if json_match:
+                return json.loads(json_match.group(1))
+            return json.loads(text)
+        
+        api_url = f"https://www.jiosaavn.com/api.php?__call=search.getResults&p={page}&q={quote(query)}&_format=json"
+        return await fetch_json(api_url)
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"JioSaavn search error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error while processing search"
+        )
+
+
+@app.get("/jiosaavn/lyrics", summary="Get song lyrics")
+async def jiosaavn_lyrics(song_id: str = Query(..., description="Song ID")):
+    """Get lyrics for a song"""
+    try:
+        import json
+        import re
+        import aiohttp
+        
+        BASE_HEADERS = {"User-Agent": "Mozilla/5.0"}
+        
+        async def fetch_json(api_url: str):
+            async with aiohttp.ClientSession() as session:
+                async with session.get(api_url, headers=BASE_HEADERS) as resp:
+                    if resp.status != 200:
+                        raise HTTPException(status_code=502, detail="Failed to fetch lyrics")
+                    text = await resp.text()
+            json_match = re.search(r"\(({.*})\)", text)
+            if json_match:
+                return json.loads(json_match.group(1))
+            return json.loads(text)
+        
+        api_url = f"https://www.jiosaavn.com/api.php?__call=lyrics.getLyrics&lyrics_id={song_id}&_format=json"
+        return await fetch_json(api_url)
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"JioSaavn lyrics error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error while fetching lyrics"
+        )
+
+
+@app.get("/jiosaavn/recommend", summary="Get recommendations for a song")
+async def jiosaavn_recommend(song_id: str = Query(..., description="Song ID")):
+    """Get song recommendations"""
+    try:
+        import json
+        import re
+        import aiohttp
+        
+        BASE_HEADERS = {"User-Agent": "Mozilla/5.0"}
+        
+        async def fetch_json(api_url: str):
+            async with aiohttp.ClientSession() as session:
+                async with session.get(api_url, headers=BASE_HEADERS) as resp:
+                    if resp.status != 200:
+                        raise HTTPException(status_code=502, detail="Failed to fetch recommendations")
+                    text = await resp.text()
+            json_match = re.search(r"\(({.*})\)", text)
+            if json_match:
+                return json.loads(json_match.group(1))
+            return json.loads(text)
+        
+        api_url = f"https://www.jiosaavn.com/api.php?__call=reco.getreco&pid={song_id}&_format=json"
+        return await fetch_json(api_url)
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"JioSaavn recommendation error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error while fetching recommendations"
+        )
+
 
 if __name__ == "__main__":
     import uvicorn
