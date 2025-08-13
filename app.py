@@ -121,13 +121,13 @@ class TeraboxResponse(BaseModel):
     status: str = Field(..., description="Response status")
     file_name: Optional[str] = Field(None, description="File name")
     thumb: Optional[str] = Field(None, description="Thumbnail URL")
+    size: Optional[str] = Field(None, description="Human readable file size")
+    sizebytes: Optional[int] = Field(None, description="File size in bytes")    
     link: Optional[str] = Field(None, description="Original link")
     direct_link: Optional[str] = Field(None, description="Direct download link")
-    sizebytes: Optional[int] = Field(None, description="File size in bytes")
     dl1: Optional[str] = Field(None, description="Download link 1")
     dl2: Optional[str] = Field(None, description="Download link 2")
-    size: Optional[str] = Field(None, description="Human readable file size")
-    message: Optional[str] = Field(None, description="Error message if any")
+
 
 # ---------- Global Variables ----------
 app_start_time = time.time()
