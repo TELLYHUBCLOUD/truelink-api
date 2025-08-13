@@ -3,22 +3,29 @@ Pydantic models for TrueLink API
 """
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, HttpUrl, Field, validator
-from config import Settings
+from config import Config
 
 class BatchRequest(BaseModel):
     """Request model for batch URL resolution."""
     urls: List[HttpUrl] = Field(
         ..., 
         min_items=1, 
-        max_items=Settings.MAX_BATCH_SIZE,
-        description=f"List of URLs to resolve (max {Settings.MAX_BATCH_SIZE})"
+        max_items=Config.MAX_BATCH_SIZE,
+        description=f"List of URLs to resolve (max {Config.MAX_BATCH_SIZE})"
     )
     
     @validator('urls')
     def validate_urls(cls, v):
-        if len(v) > Settings.MAX_BATCH_SIZE:
-            raise ValueError(f"Maximum {Settings.MAX_BATCH_SIZE} URLs allowed")
-        return v
+        if len(v) > Config.MAX_BATCH_SIZE:
+            raise ValueError(f"Maximum {Config.MAX_BATCH_SIZE} URLs allowed")
+        validated_urls = []
+        for url in v:
+            url_str = str(url)
+            from utils import is_valid_url
+            if not is_valid_url(url_str):
+                raise ValueError(f"Invalid URL: {url_str}")
+            validated_urls.append(url_str)
+        return validated_urls
 
 class ResolveResponse(BaseModel):
     """Response model for URL resolution."""
@@ -34,8 +41,8 @@ class BatchResponse(BaseModel):
     count: int = Field(..., description="Number of URLs processed")
     results: List[ResolveResponse] = Field(..., description="Resolution results")
     total_processing_time: float = Field(..., description="Total processing time in seconds")
-    success_count: Optional[int] = Field(None, description="Number of successful resolutions")
-    error_count: Optional[int] = Field(None, description="Number of failed resolutions")
+    success_count: int = Field(..., description="Number of successful resolutions")
+    error_count: int = Field(..., description="Number of failed resolutions")
 
 class DirectLinksResponse(BaseModel):
     """Response model for direct links extraction."""
@@ -51,17 +58,17 @@ class HealthResponse(BaseModel):
     uptime: float = Field(..., description="Service uptime in seconds")
     supported_domains_count: int = Field(..., description="Number of supported domains")
     memory_usage: Optional[Dict[str, Any]] = Field(None, description="Memory usage statistics")
+    system_info: Optional[Dict[str, Any]] = Field(None, description="System information")
 
-class ErrorResponse(BaseModel):
-    """Response model for errors."""
-    error: str = Field(..., description="Error type")
-    message: str = Field(..., description="Error message")
-    details: Optional[Dict[str, Any]] = Field(None, description="Additional error details")
-    timestamp: Optional[float] = Field(None, description="Error timestamp")
-
-class SupportedDomainsResponse(BaseModel):
-    """Response model for supported domains."""
-    count: int = Field(..., description="Number of supported domains")
-    domains: List[str] = Field(..., description="List of supported domains")
-    last_updated: float = Field(..., description="Last update timestamp")
-    categories: Optional[Dict[str, List[str]]] = Field(None, description="Domains grouped by category")
+class TeraboxResponse(BaseModel):
+    """Response model for Terabox resolution."""
+    status: str = Field(..., description="Response status")
+    file_name: Optional[str] = Field(None, description="File name")
+    thumb: Optional[str] = Field(None, description="Thumbnail URL")
+    link: Optional[str] = Field(None, description="Original link")
+    direct_link: Optional[str] = Field(None, description="Direct download link")
+    sizebytes: Optional[int] = Field(None, description="File size in bytes")
+    dl1: Optional[str] = Field(None, description="Download link 1")
+    dl2: Optional[str] = Field(None, description="Download link 2")
+    size: Optional[str] = Field(None, description="Human readable file size")
+    message: Optional[str] = Field(None, description="Error message if any")
