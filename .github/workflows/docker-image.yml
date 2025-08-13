@@ -33,4 +33,4 @@ jobs:
 
       - name: Push Docker image to Docker Hub
         run: |
-          docker push ${{ github.event.inputs.DOCKERHUB_USERNAME }}/${{ github.event.inputs.IMAGENAME }}:latest
+          docker push ${{ github.event.inputs.DOCKERHUB_USERNAME }}/${{ github.event.inputs.IMAGENAME }}:dev
