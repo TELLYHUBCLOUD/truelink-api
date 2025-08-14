@@ -25,7 +25,8 @@ from endpoints import (
     root_router,
     help_router,
     jiosaavn_router,
-    socialdl_router
+    socialdl_router,
+    blackboxai_router
 )
 
 # ---------- Logging Setup ----------
@@ -111,6 +112,7 @@ app.include_router(supported_domains_router, tags=["Domains"])
 app.include_router(terabox_router, tags=["Terabox"])
 app.include_router(jiosaavn_router, tags=["JioSaavn"])
 app.include_router(socialdl_router, tags=["Social Midea dl"])
+app.include_router(blackboxai_router, tags=["Ask Blackbox AI Anything"])
 
 if __name__ == "__main__":
     import uvicorn
