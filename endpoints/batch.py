@@ -1,5 +1,5 @@
 """
-Batch URL resolution endpoint
+Batch URL resolution endpoint (Improved)
 """
 import time
 import asyncio
@@ -20,61 +20,68 @@ async def resolve_batch(
     retries: int = Query(3, ge=0, le=10),
     cache: bool = Query(True)
 ):
-    """Resolve multiple URLs concurrently with rate limiting"""
+    """
+    Resolve multiple URLs concurrently with rate limiting & detailed logging.
+    """
     start_time = time.time()
     urls = [str(url) for url in payload.urls]
-    
-    logger.info(f"Batch resolve request for {len(urls)} URLs")
-    
-    # Use semaphore to limit concurrent requests
+
+    if not urls:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No URLs provided"
+        )
+
+    logger.info(f"Batch resolve started for {len(urls)} URLs")
+
     semaphore = asyncio.Semaphore(Config.CONCURRENT_LIMIT)
 
-    async def semaphore_task(url: str):
+    async def resolve_with_semaphore(url: str) -> ResolveResponse:
         async with semaphore:
-            return await resolve_single(url, timeout=timeout, retries=retries, use_cache=cache)
+            url_start = time.time()
+            try:
+                result = await resolve_single(url, timeout=timeout, retries=retries, use_cache=cache)
+                result.processing_time = round(time.time() - url_start, 3)
+                logger.debug(f"Resolved {url} in {result.processing_time}s - Status: {result.status}")
+                return result
+            except asyncio.CancelledError:
+                logger.warning(f"Cancelled resolution for {url}")
+                raise
+            except Exception as e:
+                logger.error(f"Error resolving {url}: {e}")
+                return ResolveResponse(
+                    url=url,
+                    status="error",
+                    message=str(e),
+                    processing_time=round(time.time() - url_start, 3)
+                )
 
     try:
         results = await asyncio.gather(
-            *[semaphore_task(url) for url in urls],
-            return_exceptions=True
+            *(resolve_with_semaphore(url) for url in urls),
+            return_exceptions=False  # We handle errors inside the function
         )
-        
-        # Handle any exceptions that occurred
-        processed_results = []
-        success_count = 0
-        error_count = 0
-        
-        for i, result in enumerate(results):
-            if isinstance(result, Exception):
-                logger.error(f"Exception in batch processing for {urls[i]}: {result}")
-                processed_results.append(ResolveResponse(
-                    url=urls[i],
-                    status="error",
-                    message=str(result),
-                    processing_time=0
-                ))
-                error_count += 1
-            else:
-                processed_results.append(result)
-                if result.status == "success":
-                    success_count += 1
-                else:
-                    error_count += 1
-        
-        total_time = time.time() - start_time
-        logger.info(f"Batch processing completed in {total_time:.2f}s - Success: {success_count}, Errors: {error_count}")
-        
+
+        success_count = sum(1 for r in results if r.status == "success")
+        error_count = len(results) - success_count
+        total_time = round(time.time() - start_time, 3)
+
+        logger.info(
+            f"Batch processing completed in {total_time}s - "
+            f"Success: {success_count}, Errors: {error_count}"
+        )
+
         return BatchResponse(
-            count=len(processed_results),
-            results=processed_results,
+            count=len(results),
+            results=results,
             total_processing_time=total_time,
             success_count=success_count,
             error_count=error_count
         )
-        
+
     except Exception as exc:
-        logger.exception("Batch processing failed")
+        logger.exception("Batch processing failed unexpectedly")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Batch processing failed: {str(exc)}"
+            detail=f"Batch processing failed: {exc}"
         )
