@@ -182,7 +182,7 @@ async def download_social_media(
         )
 
 
-@router.get("/socialdl/youtube", response_model=YouTubeDownloadResponse)
+@router.get("/youtube", response_model=YouTubeDownloadResponse)
 async def download_youtube(
     url: HttpUrl = Query(..., description="YouTube video URL")
 ):
