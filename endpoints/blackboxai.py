@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 # Set your Blackbox API key here
-BLACKBOX_API_KEY = "YOUR_BLACKBOX_API_KEY"
+BLACKBOX_API_KEY = "sk-HdAIUyoPn08GMxTMEhN4bA"
 
 # ============================
 # Pydantic Models
@@ -32,6 +32,62 @@ class ImageResponse(BaseModel):
 class PDFResponse(BaseModel):
     status: str
     result: dict
+    
+FREE_MODELS = [
+    "blackboxai/qwen/qwq-32b:free",
+    "blackboxai/mistralai/mistral-nemo:free",
+    "blackboxai/deepseek/deepseek-r1-0528:free",
+    "blackboxai/qwen/qwen3-30b-a3b:free",
+    "blackboxai/deepseek/deepseek-v3-base:free",
+    "blackboxai/mistralai/mistral-small-24b-instruct-2501:free",
+    "blackboxai/agentica-org/deepcoder-14b-preview:free",
+    "blackboxai/deepseek/deepseek-r1-distill-llama-70b:free",
+    "blackboxai/tngtech/deepseek-r1t-chimera:free",
+    "blackboxai/sarvamai/sarvam-m:free",
+    "blackboxai/microsoft/mai-ds-r1:free",
+    "blackboxai/openrouter/cypher-alpha:free",
+    "blackboxai/meta-llama/llama-3.2-11b-vision-instruct:free",
+    "blackboxai/moonshotai/kimi-dev-72b:free",
+    "blackboxai/cognitivecomputations/dolphin3.0-mistral-24b:free",
+    "blackboxai/qwen/qwen3-14b:free",
+    "blackboxai/thudm/glm-z1-32b:free",
+    "blackboxai/nousresearch/deephermes-3-llama-3-8b-preview:free",
+    "blackboxai/google/gemma-3-4b-it:free",
+    "blackboxai/deepseek/deepseek-chat:free",
+    "blackboxai/meta-llama/llama-4-scout:free",
+    "blackboxai/mistralai/mistral-small-3.1-24b-instruct:free",
+    "blackboxai/qwen/qwen-2.5-72b-instruct:free",
+    "blackboxai/qwen/qwen3-32b:free",
+    "blackboxai/qwen/qwen2.5-vl-32b-instruct:free",
+    "blackboxai/deepseek/deepseek-r1:free",
+    "blackboxai/mistralai/mistral-7b-instruct:free",
+    "blackboxai/cognitivecomputations/dolphin3.0-r1-mistral-24b:free",
+    "blackboxai/google/gemma-2-9b-it:free",
+    "blackboxai/thudm/glm-4-32b:free",
+    "blackboxai/deepseek/deepseek-r1-distill-qwen-14b:free",
+    "blackboxai/google/gemma-3n-e4b-it:free",
+    "blackboxai/deepseek/deepseek-chat-v3-0324:free",
+    "blackboxai/nvidia/llama-3.1-nemotron-ultra-253b-v1:free",
+    "blackboxai/meta-llama/llama-4-maverick:free",
+    "blackboxai/qwen/qwen3-8b:free",
+    "blackboxai/google/gemma-3-12b-it:free",
+    "blackboxai/google/gemini-2.0-flash-exp:free",
+    "blackboxai/qwen/qwen2.5-vl-72b-instruct:free",
+    "blackboxai/shisa-ai/shisa-v2-llama3.3-70b:free",
+    "blackboxai/mistralai/mistral-small-3.2-24b-instruct:free",
+    "blackboxai/arliai/qwq-32b-arliai-rpr-v1:free",
+    "blackboxai/deepseek/deepseek-r1-0528-qwen3-8b:free",
+    "blackboxai/qwen/qwen3-235b-a22b:free",
+    "blackboxai/google/gemma-3-27b-it:free",
+    "blackboxai/nvidia/llama-3.3-nemotron-super-49b-v1:free",
+    "blackboxai/meta-llama/llama-3.3-70b-instruct:free",
+    "blackboxai/qwen/qwen-2.5-coder-32b-instruct:free",
+    "blackboxai/featherless/qwerky-72b:free",
+    "blackboxai/rekaai/reka-flash-3:free",
+    "blackboxai/moonshotai/kimi-vl-a3b-thinking:free",
+    "blackboxai/mistralai/devstral-small:free"
+]
+
 
 
 # ============================
@@ -70,6 +126,10 @@ async def blackbox_request(endpoint: str, payload: dict = None, files: dict = No
 # ============================
 # Endpoints
 # ============================
+# List all free models
+@router.get("/blackboxai/models/free")
+async def list_free_models():
+    return {"status": "success", "models": FREE_MODELS}
 
 @router.post("/blackbox/chat", response_model=ChatResponse)
 async def blackbox_chat(request: ChatRequest):
