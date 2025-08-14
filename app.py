@@ -24,7 +24,8 @@ from endpoints import (
     terabox_router,
     root_router,
     help_router,
-    jiosaavn_router
+    jiosaavn_router,
+    socialdl_router
 )
 
 # ---------- Logging Setup ----------
@@ -50,7 +51,7 @@ async def lifespan(app: FastAPI):
 # ---------- FastAPI App ----------
 app = FastAPI(
     title="Advanced TrueLink API",
-    version="3.1",
+    version="3.2",
     description="High-performance API for resolving URLs to direct download links with modular architecture",
     docs_url="/docs",
     redoc_url="/redoc",
@@ -109,6 +110,7 @@ app.include_router(download_stream_router, tags=["Streaming"])
 app.include_router(supported_domains_router, tags=["Domains"])
 app.include_router(terabox_router, tags=["Terabox"])
 app.include_router(jiosaavn_router, tags=["JioSaavn"])
+app.include_router(socialdl_router, tags=["Social Midea dl"])
 
 if __name__ == "__main__":
     import uvicorn
