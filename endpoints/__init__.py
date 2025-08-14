@@ -12,6 +12,7 @@ from .terabox import router as terabox_router
 from .root import router as root_router
 from .help import router as help_router
 from .jiosaavn import router as jiosaavn_router
+from .socialdl import router as socialdl_router
 
 __all__ = [
     "health_router",
@@ -24,5 +25,6 @@ __all__ = [
     "terabox_router",
     "root_router",
     "help_router",
-    "jiosaavn_router"
+    "jiosaavn_router",
+    "socialdl_router"
 ]
