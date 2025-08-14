@@ -296,7 +296,7 @@ async def get_song(song_id: str):
 
 @router.get("/jiosaavn/songs/{song_id}/suggestions", response_model=JioSaavnResponse)
 async def jiosaavn_get_song_suggestions(
-    song_id: str = Query(..., description="Song ID"),
+    song_id: str,
     limit: int = Query(10, ge=1, le=50, description="Number of suggestions")
 ):
     """Get song suggestions"""
@@ -420,7 +420,7 @@ async def jiosaavn_get_artist(
 
 @router.get("/jiosaavn/artists/{artist_id}", response_model=JioSaavnResponse)
 async def jiosaavn_get_artist_by_id(
-    artist_id: str = Query(..., description="Artist ID"),
+    artist_id: str,
     page: int = Query(0, ge=0, description="Page number"),
     song_count: int = Query(10, ge=1, le=50, description="Number of songs"),
     album_count: int = Query(10, ge=1, le=50, description="Number of albums"),
@@ -461,7 +461,7 @@ async def jiosaavn_get_artist_by_id(
 
 @router.get("/jiosaavn/artists/{artist_id}/songs", response_model=JioSaavnResponse)
 async def jiosaavn_get_artist_songs(
-    artist_id: str = Query(..., description="Artist ID"),
+    artist_id: str,
     page: int = Query(0, ge=0, description="Page number"),
     sort_by: str = Query("popularity", description="Sort by"),
     sort_order: str = Query("desc", description="Sort order")
@@ -498,7 +498,7 @@ async def jiosaavn_get_artist_songs(
 
 @router.get("/jiosaavn/artists/{artist_id}/albums", response_model=JioSaavnResponse)
 async def jiosaavn_get_artist_albums(
-    artist_id: str = Query(..., description="Artist ID"),
+    artist_id: str,
     page: int = Query(0, ge=0, description="Page number"),
     sort_by: str = Query("popularity", description="Sort by"),
     sort_order: str = Query("desc", description="Sort order")
