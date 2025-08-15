@@ -31,9 +31,7 @@ async def get_supported_platforms():
     """Returns all supported platforms with patterns & API endpoints."""
     return [
         {
-            "name": name,
-            "pattern": info["pattern"],
-            "api_endpoint": info["api"]
+            "pattern": info["pattern"]
         }
         for name, info in PLATFORMS.items()
     ]
