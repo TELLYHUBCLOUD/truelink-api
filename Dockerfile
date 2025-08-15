@@ -7,7 +7,7 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies + Playwright requirements
 RUN apt-get update && apt-get install -y \
     curl \
     gnupg \
@@ -29,6 +29,16 @@ RUN apt-get update && apt-get install -y \
     fonts-noto \
     fonts-noto-cjk \
     fonts-unifont \
+    libcurl4 \
+    libpci3 \
+    libxss1 \
+    libgconf-2-4 \
+    libpangocairo-1.0-0 \
+    libatspi2.0-0 \
+    libpango-1.0-0 \
+    libpangox-1.0-0 \
+    libx11-xcb1 \
+    libxtst6 \
     && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
     && apt-get install -y nodejs \
     && apt-get autoremove -y \
