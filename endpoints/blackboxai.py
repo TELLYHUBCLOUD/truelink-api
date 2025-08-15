@@ -1,12 +1,13 @@
-from fastapi import APIRouter, UploadFile, File, Form, Query
+from fastapi import APIRouter, UploadFile, File, Form, Query, HTTPException
 from fastapi.responses import JSONResponse
 import aiohttp
 import logging
-import os
+
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+# Deduplicated model list
 BLACKBOX_MODELS = [
     "blackboxai/microsoft/mai-ds-r1:free",
     "blackboxai/google/gemma-3-4b-it:free",
@@ -14,7 +15,6 @@ BLACKBOX_MODELS = [
     "blackboxai/google/gemma-2-9b-it:free",
     "blackboxai/thudm/glm-4-32b:free",
     "blackboxai/cognitivecomputations/dolphin3.0-mistral-24b:free",
-    "blackboxai/deepseek/deepseek-chat-v3-0324:free",
     "blackboxai/deepseek/deepseek-chat-v3-0324:free",
     "blackboxai/openrouter/cypher-alpha:free",
     "blackboxai/google/gemma-3-12b-it:free",
@@ -64,11 +64,17 @@ BLACKBOX_MODELS = [
 ]
 
 BLACKBOX_API_URL = "https://api.blackbox.ai/api"
-BLACKBOX_API_KEY = "sk-DKQbJT2E-FrF1vZH51Vt6g"
 
-HEADERS = {
-    "Authorization": f"Bearer {BLACKBOX_API_KEY}"
-}
+def get_headers():
+    """Dynamically get headers with API key from environment"""
+    api_key = "sk-DKQbJT2E-FrF1vZH51Vt6g"
+    if not api_key:
+        logger.error("BLACKBOX_API_KEY environment variable not set")
+        raise HTTPException(
+            status_code=500,
+            detail="Server configuration error"
+        )
+    return {"Authorization": f"Bearer {api_key}"}
 
 @router.get("/models")
 async def list_models():
@@ -79,44 +85,114 @@ async def blackbox_text(
     prompt: str = Form(...),
     model: str = Query(default="blackboxai/mistralai/mistral-nemo:free")
 ):
-    payload = {"model": model, "messages": [{"role": "user", "content": prompt}]}
-    async with aiohttp.ClientSession(headers=HEADERS) as session:
-        async with session.post(f"{BLACKBOX_API_URL}/chat", json=payload) as resp:
-            data = await resp.json()
-    return data
+    # Validate requested model
+    if model not in BLACKBOX_MODELS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid model. Use /models to see available options"
+        )
+    
+    payload = {
+        "model": model,
+        "messages": [{"role": "user", "content": prompt}]
+    }
+    
+    try:
+        headers = get_headers()
+        async with aiohttp.ClientSession(headers=headers) as session:
+            async with session.post(
+                f"{BLACKBOX_API_URL}/chat", 
+                json=payload,
+                timeout=aiohttp.ClientTimeout(total=30)
+            ) as resp:
+                if resp.status != 200:
+                    error_detail = await resp.text()
+                    logger.error(f"Blackbox API error: {resp.status} - {error_detail}")
+                    raise HTTPException(
+                        status_code=502,
+                        detail=f"Blackbox API responded with error: {error_detail}"
+                    )
+                return await resp.json()
+                
+    except aiohttp.ClientError as e:
+        logger.exception("Network error during Blackbox API call")
+        raise HTTPException(
+            status_code=503,
+            detail="Service temporarily unavailable"
+        )
+
+async def handle_file_upload(endpoint: str, prompt: str, file: UploadFile):
+    """Generic file upload handler for Blackbox APIs"""
+    # Validate file size (max 10MB)
+    file.file.seek(0, 2)  # Go to end of file
+    file_size = file.file.tell()
+    file.file.seek(0)  # Reset file position
+    
+    if file_size > 10 * 1024 * 1024:  # 10MB
+        raise HTTPException(
+            status_code=413,
+            detail="File too large. Max size is 10MB"
+        )
+        
+    form_data = aiohttp.FormData()
+    form_data.add_field("prompt", prompt)
+    form_data.add_field(
+        "file", 
+        await file.read(),
+        filename=file.filename,
+        content_type=file.content_type or "application/octet-stream"
+    )
+    
+    try:
+        headers = get_headers()
+        async with aiohttp.ClientSession(headers=headers) as session:
+            async with session.post(
+                f"{BLACKBOX_API_URL}/{endpoint}",
+                data=form_data,
+                timeout=aiohttp.ClientTimeout(total=60)
+            ) as resp:
+                if resp.status != 200:
+                    error_detail = await resp.text()
+                    logger.error(f"Blackbox {endpoint} API error: {resp.status} - {error_detail}")
+                    raise HTTPException(
+                        status_code=502,
+                        detail=f"Blackbox API error: {error_detail}"
+                    )
+                return await resp.json()
+                
+    except aiohttp.ClientError as e:
+        logger.exception(f"Network error during Blackbox {endpoint} API call")
+        raise HTTPException(
+            status_code=503,
+            detail="Service temporarily unavailable"
+        )
 
 @router.post("/image")
 async def blackbox_image(
     prompt: str = Form(...),
     file: UploadFile = File(...)
 ):
-    form_data = aiohttp.FormData()
-    form_data.add_field("prompt", prompt)
-    form_data.add_field(
-        "file", await file.read(),
-        filename=file.filename,
-        content_type=file.content_type
-    )
-
-    async with aiohttp.ClientSession(headers=HEADERS) as session:
-        async with session.post(f"{BLACKBOX_API_URL}/image", data=form_data) as resp:
-            result = await resp.json()
-    return result
+    # Validate file type
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(
+            status_code=400,
+            detail="Only image files are supported"
+        )
+        
+    return await handle_file_upload("image", prompt, file)
 
 @router.post("/pdf")
 async def blackbox_pdf(
     prompt: str = Form(...),
     file: UploadFile = File(...)
 ):
-    form_data = aiohttp.FormData()
-    form_data.add_field("prompt", prompt)
-    form_data.add_field(
-        "file", await file.read(),
-        filename=file.filename,
-        content_type=file.content_type
-    )
-
-    async with aiohttp.ClientSession(headers=HEADERS) as session:
-        async with session.post(f"{BLACKBOX_API_URL}/pdf", data=form_data) as resp:
-            result = await resp.json()
-    return result
+    # Validate file type
+    if file.content_type != "application/pdf":
+        # Check filename as fallback
+        if not file.filename.lower().endswith(".pdf"):
+            raise HTTPException(
+                status_code=400,
+                detail="Only PDF files are supported"
+            )
+    
+    return await handle_file_upload("pdf", prompt, file)
