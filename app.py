@@ -26,7 +26,8 @@ from endpoints import (
     help_router,
     jiosaavn_router,
     blackboxai_router,
-    monkeybypass_router
+    monkeybypass_router,
+    poster_router
 )
 
 # ---------- Logging Setup ----------
@@ -113,6 +114,7 @@ app.include_router(terabox_router, tags=["Terabox API"])
 app.include_router(jiosaavn_router, tags=["JioSaavn API"])
 app.include_router(blackboxai_router, tags=["BlackBox AI"])
 app.include_router(monkeybypass_router, tags=["Tamper Monkey"])
+app.include_router(poster_router, tags=["Poster Scrap"])
 
 
 if __name__ == "__main__":
