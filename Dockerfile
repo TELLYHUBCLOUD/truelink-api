@@ -7,12 +7,10 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
 WORKDIR /app
 
-# Install system dependencies for Playwright
+# Install system dependencies - updated list
 RUN apt-get update && apt-get install -y \
     curl \
     gnupg \
-    git \
-    libgconf-2-4 \
     libnss3 \
     libnspr4 \
     libatk1.0-0 \
@@ -28,26 +26,27 @@ RUN apt-get update && apt-get install -y \
     libasound2 \
     libxshmfence1 \
     libgl1 \
-    wget \
-    unzip \
+    fonts-noto \
+    fonts-noto-cjk \
+    # Install Node.js directly
+    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs \
     # Clean up
+    && apt-get autoremove -y \
+    && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
-
-# Install Node.js (required for Playwright)
-RUN curl -sL https://deb.nodesource.com/setup_18.x | bash - \
-    && apt-get install -y nodejs
 
 COPY requirements.txt .
 
 # Ensure pip is available
 RUN python3 -m ensurepip --upgrade
 
-# Install Python dependencies including Playwright
+# Install Python dependencies
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir --upgrade truelink && \
     pip install --no-cache-dir -r requirements.txt
 
-# Install Playwright browsers
+# Install Playwright and browsers
 RUN npx playwright install --with-deps chromium
 
 COPY . .
