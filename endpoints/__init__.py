@@ -14,7 +14,8 @@ from .help import router as help_router
 from .jiosaavn import router as jiosaavn_router
 from .blackboxai import router as blackboxai_router
 from .monkeybypass import router as monkeybypass_router 
-from .poster import router as poster_router 
+from .poster import router as poster_router
+from .linkvertise import router as linkvertise_router 
 
 
 __all__ = [
@@ -31,5 +32,6 @@ __all__ = [
     "jiosaavn_router",
     "blackboxai_router",
     "monkeybypass_router",
-    "poster_router"
+    "poster_router",
+    "linkvertise"
 ]
