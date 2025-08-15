@@ -54,7 +54,7 @@ RUN pip install --no-cache-dir --upgrade truelink && \
     pip install --no-cache-dir -r requirements.txt
 
 # Install Playwright + Chromium
-RUN npx playwright install --with-deps chromium
+RUN pip install playwright && playwright install chromium
 
 # Copy project files
 COPY . .
