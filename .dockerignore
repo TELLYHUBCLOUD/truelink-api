@@ -1,16 +1,108 @@
+# Python artifacts
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.egg-info/
+*.egg
+.pytest_cache/
+dist/
+build/
+
+# Database files
 *.db
 *.sqlite3
+*.sqlite
+
+# Environment files
 .env
 .env.*
+.env.local
+.env.prod
+secrets.ini
+
+# Log files
 *.log
+*.log.*
+logs/
+
+# System files
 .DS_Store
+Thumbs.db
+
+# Editor and IDE
 .vscode/
 .idea/
+.venv/
+
+# Version control
 .git/
 .gitignore
+.gitattributes
+.github/
+
+# Tests and documentation
 tests/
+test/
+docs/
+examples/
+coverage.xml
+.tox/
+
+# Archives
 *.zip
+*.tar
+*.gz
+*.bz2
+
+# Node artifacts (for Playwright)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Playwright specific
+playwright-report/
+test-results/
+
+# Docker files
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Temporary files
+*~
+*.swp
+*.swo
+
+# MacOS specific
+._*
+
+# Application specific
+docker-compose*
+dockerfile*
+.dockerignore*
+*.dockerignore
+
+# Large files
+*.csv
+*.dat
+*.data
+*.dump
+
+# Configuration files not needed in container
+*.yml
+*.yaml
+*.toml
+*.cfg
+*.conf
+*.ini
+*.xml
+
+# Documentation files
+*.md
+*.rst
+LICENSE
+AUTHORS
+CHANGES
+CONTRIBUTING
+README
