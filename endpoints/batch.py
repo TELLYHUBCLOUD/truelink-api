@@ -32,6 +32,12 @@ async def resolve_batch(
             detail="No URLs provided"
         )
 
+    if len(urls) > Config.MAX_BATCH_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Too many URLs. Maximum allowed: {Config.MAX_BATCH_SIZE}"
+        )
+
     logger.info(f"Batch resolve started for {len(urls)} URLs")
 
     semaphore = asyncio.Semaphore(Config.CONCURRENT_LIMIT)

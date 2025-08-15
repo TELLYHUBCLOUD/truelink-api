@@ -1,5 +1,5 @@
 """
-Terabox resolution endpoint - Improved Debug & Merge
+Terabox resolution endpoint - Concurrent API execution with fallback
 """
 import time
 import logging
@@ -101,8 +101,7 @@ async def terabox_endpoint(
             thumb=data.get("thumb"),
             link=data.get("link"),
             direct_link=data.get("direct_link"),
-            sizebytes=data.get("sizebytes"),
-            debug={"api1": api1_result, "api2": api2_result}
+            sizebytes=data.get("sizebytes")
         )
     elif api2_result.get("success"):
         data = api2_result["data"]
@@ -116,7 +115,6 @@ async def terabox_endpoint(
             sizebytes=metadata.get("sizebytes"),
             dl1=links.get("dl1"),
             dl2=links.get("dl2"),
-            debug={"api1": api1_result, "api2": api2_result}
         )
 
     processing_time = time.time() - start_time
@@ -124,6 +122,5 @@ async def terabox_endpoint(
 
     return TeraboxResponse(
         status="error",
-        message=f"Both APIs failed. API 1: {api1_result.get('error')}, API 2: {api2_result.get('error')}",
-        debug={"api1": api1_result, "api2": api2_result}
+        message=f"Both APIs failed. API 1: {api1_result.get('error')}, API 2: {api2_result.get('error')}"
     )

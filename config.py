@@ -18,13 +18,12 @@ app_start_time = time.time()
 class Config:
     """Application configuration with environment variable support"""
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
-    MAX_BATCH_SIZE = int(os.getenv("MAX_BATCH_SIZE", "50"))
+    MAX_BATCH_SIZE = int(os.getenv("MAX_BATCH_SIZE", "25"))
     DEFAULT_TIMEOUT = int(os.getenv("DEFAULT_TIMEOUT", "20"))
     MAX_TIMEOUT = int(os.getenv("MAX_TIMEOUT", "120"))
-    CONCURRENT_LIMIT = int(os.getenv("CONCURRENT_LIMIT", "8"))
+    CONCURRENT_LIMIT = int(os.getenv("CONCURRENT_LIMIT", "5"))
     ENABLE_CORS = os.getenv("ENABLE_CORS", "true").lower() == "true"
     TRUSTED_HOSTS = [host.strip() for host in os.getenv("TRUSTED_HOSTS", "*").split(",")]
-    CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "65536"))  # 64KB
 
     @classmethod
     def validate(cls):

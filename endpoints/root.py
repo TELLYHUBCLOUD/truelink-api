@@ -9,7 +9,7 @@ router = APIRouter()
 async def root():
     """Root endpoint with API information"""
     return {
-        "message": "Welcome to Advanced TrueLink API v3.1",
+        "message": "Welcome to Advanced TrueLink API v3.3",
         "documentation": "/docs",
         "help": "/help",
         "health": "/health",

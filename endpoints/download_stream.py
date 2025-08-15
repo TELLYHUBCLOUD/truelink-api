@@ -45,8 +45,8 @@ async def download_stream(
 
         logger.debug("Creating aiohttp session connector...")
         connector = aiohttp.TCPConnector(
-            limit=100,
-            limit_per_host=30,
+            limit=50,
+            limit_per_host=10,
             keepalive_timeout=30,
             enable_cleanup_closed=True
         )

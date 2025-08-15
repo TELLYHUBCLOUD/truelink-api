@@ -37,7 +37,7 @@ async def health():
         
         return HealthResponse(
             status="healthy",
-            version="3.1",
+            version="3.3",
             uptime=uptime,
             supported_domains_count=domains_count,
             memory_usage=get_memory_usage(),
