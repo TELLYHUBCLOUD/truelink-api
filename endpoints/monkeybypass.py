@@ -4,9 +4,37 @@ from pydantic import HttpUrl
 from playwright.async_api import async_playwright
 import os
 import logging
+import sys
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+# Function to ensure Playwright browsers are installed
+async def install_playwright_browsers():
+    try:
+        logger.info("Checking Playwright browser installation")
+        async with async_playwright() as p:
+            browser = await p.chromium.launch()
+            await browser.close()
+        logger.info("Playwright browsers are installed")
+    except Exception as e:
+        logger.error(f"Browser not installed: {str(e)}")
+        logger.info("Attempting to install browsers...")
+        
+        # Install browsers using Playwright CLI
+        proc = await asyncio.create_subprocess_exec(
+            sys.executable, "-m", "playwright", "install", "chromium",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        
+        stdout, stderr = await proc.communicate()
+        
+        if proc.returncode != 0:
+            logger.error(f"Browser installation failed: {stderr.decode()}")
+            raise RuntimeError("Failed to install Playwright browsers")
+        
+        logger.info("Successfully installed browsers")
 
 # Read the Tampermonkey script from file
 TAMPERMONKEY_SCRIPT = ""
@@ -27,6 +55,9 @@ async def tmonkey_bypass(url: HttpUrl = Query(..., description="URL to bypass Cl
         )
     
     try:
+        # Ensure browsers are installed
+        await install_playwright_browsers()
+        
         async with async_playwright() as p:
             # Launch browser with enhanced stealth settings
             browser = await p.chromium.launch(
@@ -40,7 +71,9 @@ async def tmonkey_bypass(url: HttpUrl = Query(..., description="URL to bypass Cl
                     "--disable-web-security",
                     "--disable-features=IsolateOrigins,site-per-process",
                     "--disable-site-isolation-trials"
-                ]
+                ],
+                # Point to the correct browser path
+                executable_path=os.environ.get("PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH")
             )
             
             # Create isolated context
@@ -84,40 +117,12 @@ async def tmonkey_bypass(url: HttpUrl = Query(..., description="URL to bypass Cl
             final_url = page.url
             content = await page.content()
             
-            # Capture console logs
-            console_logs = []
-            def log_handler(msg):
-                console_logs.append({
-                    "type": msg.type,
-                    "text": msg.text,
-                    "location": {
-                        "url": msg.location["url"],
-                        "line": msg.location["lineNumber"],
-                        "column": msg.location["columnNumber"]
-                    }
-                })
-            page.on("console", log_handler)
-            
-            # Capture network errors
-            network_errors = []
-            def response_handler(response):
-                if response.status >= 400:
-                    network_errors.append({
-                        "url": response.url,
-                        "status": response.status,
-                        "method": response.request.method,
-                        "resource": response.request.resource_type
-                    })
-            page.on("response", response_handler)
-            
             await browser.close()
             
             return {
                 "status": "success",
                 "final_url": final_url,
                 "content_length": len(content),
-                "console_logs": console_logs,
-                "network_errors": network_errors,
                 "injection_result": injection_result
             }
 
