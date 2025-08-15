@@ -99,17 +99,17 @@ async def general_exception_handler(request: Request, exc: Exception):
     )
 
 # ---------- Include Routers ----------
-app.include_router(root_router, tags=["System"])
-app.include_router(health_router, tags=["System"])
-app.include_router(help_router, tags=["System"])
-app.include_router(supported_domains_router, tags=["Truelink"])
-app.include_router(direct_router, tags=["Truelink"])
-app.include_router(redirect_router, tags=["Truelink"])
-app.include_router(download_stream_router, tags=["Truelink"])
-app.include_router(resolve_router, tags=["Truelink"])
-app.include_router(batch_router, tags=["Truelink"])
-app.include_router(terabox_router, tags=["Terabox"])
-app.include_router(jiosaavn_router, tags=["JioSaavn"])
+app.include_router(root_router, tags=["System info"])
+app.include_router(health_router, tags=["System info"])
+app.include_router(help_router, tags=["System info"])
+app.include_router(supported_domains_router, tags=["Truelink library"])
+app.include_router(direct_router, tags=["Truelink library"])
+app.include_router(redirect_router, tags=["Truelink library"])
+app.include_router(download_stream_router, tags=["Truelink library"])
+app.include_router(resolve_router, tags=["Truelink library"])
+app.include_router(batch_router, tags=["Truelink library"])
+app.include_router(terabox_router, tags=["Terabox API"])
+app.include_router(jiosaavn_router, tags=["JioSaavn API"])
 app.include_router(blackboxai_router, tags=["BlackBox AI"])
 
 if __name__ == "__main__":
