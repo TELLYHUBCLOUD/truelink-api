@@ -25,7 +25,8 @@ from endpoints import (
     root_router,
     help_router,
     jiosaavn_router,
-    blackboxai_router
+    blackboxai_router,
+    monkeybypass_router
 )
 
 # ---------- Logging Setup ----------
@@ -111,6 +112,8 @@ app.include_router(batch_router, tags=["Truelink library"])
 app.include_router(terabox_router, tags=["Terabox API"])
 app.include_router(jiosaavn_router, tags=["JioSaavn API"])
 app.include_router(blackboxai_router, tags=["BlackBox AI"])
+app.include_router(monkeybypass_router, tags=["Tamper Monkey"])
+
 
 if __name__ == "__main__":
     import uvicorn
