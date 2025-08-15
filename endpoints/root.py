@@ -19,6 +19,7 @@ async def root():
             "Streaming downloads",
             "Terabox support",
             "JioSaavn music API integration",
+            "BlackBox AI code generation and assistance",
             "Comprehensive error handling"
         ]
     }

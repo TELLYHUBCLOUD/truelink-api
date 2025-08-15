@@ -37,6 +37,12 @@ async def help_page():
             "/jiosaavn/albums": "Get JioSaavn albums by ID or link",
             "/jiosaavn/artists": "Get JioSaavn artists by ID or link",
             "/jiosaavn/playlists": "Get JioSaavn playlists by ID or link",
+            "/blackboxai/generate": "Generate code using BlackBox AI",
+            "/blackboxai/explain": "Explain code using BlackBox AI",
+            "/blackboxai/debug": "Debug and fix code using BlackBox AI",
+            "/blackboxai/optimize": "Optimize code for performance/readability",
+            "/blackboxai/convert": "Convert code between programming languages",
+            "/blackboxai/chat": "General chat with BlackBox AI",
             "/help": "Show this comprehensive help page",
             "/docs": "Interactive API documentation (Swagger UI)",
             "/redoc": "Alternative API documentation (ReDoc)"

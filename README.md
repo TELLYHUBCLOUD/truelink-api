@@ -10,6 +10,7 @@ A high-performance FastAPI-based HTTP API built around the `truelink` Python lib
 - **Streaming Downloads**: Stream content directly to clients without server storage
 - **Terabox Support**: Specialized Terabox link resolution with dual API fallback
 - **JioSaavn Integration**: Complete music API with search, streaming, and metadata
+- **BlackBox AI Integration**: AI-powered code generation, debugging, and optimization
 
 ### Performance & Reliability
 - **Concurrent Processing**: Batch requests with configurable concurrency limits (default: 5)
@@ -61,6 +62,16 @@ A high-performance FastAPI-based HTTP API built around the `truelink` Python lib
 | `/jiosaavn/artists/{id}/songs` | GET | Get artist's songs with sorting |
 | `/jiosaavn/artists/{id}/albums` | GET | Get artist's albums with sorting |
 | `/jiosaavn/playlists` | GET | Get playlist details by ID or link |
+
+### BlackBox AI Code Assistant
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/blackboxai/generate` | POST | Generate code using AI based on description |
+| `/blackboxai/explain` | GET | Explain and analyze existing code |
+| `/blackboxai/debug` | GET | Debug and fix code issues |
+| `/blackboxai/optimize` | GET | Optimize code for performance or readability |
+| `/blackboxai/convert` | GET | Convert code between programming languages |
+| `/blackboxai/chat` | GET | General AI chat for programming questions |
 
 ## ⚙️ Configuration
 
@@ -162,6 +173,17 @@ curl "http://localhost:5000/jiosaavn/artists/1274170"
 
 # Get playlist
 curl "http://localhost:5000/jiosaavn/playlists?id=82914609"
+
+# Generate Python code
+curl -X POST "http://localhost:5000/blackboxai/generate" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "create a function to sort a list", "language": "python"}'
+
+# Explain code
+curl "http://localhost:5000/blackboxai/explain?code=def%20hello():%20print('world')&language=python"
+
+# Debug code
+curl "http://localhost:5000/blackboxai/debug?code=print(hello)&error=NameError&language=python"
 ```
 
 ## 🏗️ Architecture

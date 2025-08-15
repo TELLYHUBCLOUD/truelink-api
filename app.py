@@ -24,7 +24,8 @@ from endpoints import (
     terabox_router,
     root_router,
     help_router,
-    jiosaavn_router
+    jiosaavn_router,
+    blackboxai_router
 )
 
 # ---------- Logging Setup ----------
@@ -109,6 +110,7 @@ app.include_router(download_stream_router, tags=["Streaming"])
 app.include_router(supported_domains_router, tags=["Domains"])
 app.include_router(terabox_router, tags=["Terabox"])
 app.include_router(jiosaavn_router, tags=["JioSaavn"])
+app.include_router(blackboxai_router, tags=["BlackBox AI"])
 
 if __name__ == "__main__":
     import uvicorn
