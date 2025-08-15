@@ -1,8 +1,10 @@
 from fastapi import APIRouter, UploadFile, File, Form, Query
 from fastapi.responses import JSONResponse
 import aiohttp
+import logging
 import os
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 BLACKBOX_MODELS = [
@@ -62,7 +64,7 @@ BLACKBOX_MODELS = [
 ]
 
 BLACKBOX_API_URL = "https://api.blackbox.ai/api"
-BLACKBOX_API_KEY = os.getenv("BLACKBOX_API_KEY")  # Store in environment variable
+BLACKBOX_API_KEY = "sk-DKQbJT2E-FrF1vZH51Vt6g"
 
 HEADERS = {
     "Authorization": f"Bearer {BLACKBOX_API_KEY}"
