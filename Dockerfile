@@ -3,23 +3,52 @@ FROM python:3.11-slim
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies for Playwright
 RUN apt-get update && apt-get install -y \
     curl \
+    gnupg \
+    git \
+    libgconf-2-4 \
+    libnss3 \
+    libnspr4 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libasound2 \
+    libxshmfence1 \
+    libgl1 \
+    wget \
+    unzip \
+    # Clean up
     && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js (required for Playwright)
+RUN curl -sL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs
 
 COPY requirements.txt .
 
 # Ensure pip is available
 RUN python3 -m ensurepip --upgrade
 
-# Always upgrade pip and install the latest truelink + requirements
+# Install Python dependencies including Playwright
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir --upgrade truelink && \
     pip install --no-cache-dir -r requirements.txt
+
+# Install Playwright browsers
+RUN npx playwright install --with-deps chromium
 
 COPY . .
 
