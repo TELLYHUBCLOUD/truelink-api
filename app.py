@@ -27,7 +27,8 @@ from endpoints import (
     jiosaavn_router,
     blackboxai_router,
     monkeybypass_router,
-    poster_router
+    poster_router,
+    linkvertise_router
 )
 
 # ---------- Logging Setup ----------
@@ -110,11 +111,14 @@ app.include_router(redirect_router, tags=["Truelink library"])
 app.include_router(download_stream_router, tags=["Truelink library"])
 app.include_router(resolve_router, tags=["Truelink library"])
 app.include_router(batch_router, tags=["Truelink library"])
-app.include_router(terabox_router, tags=["Terabox API"])
 app.include_router(jiosaavn_router, tags=["JioSaavn API"])
 app.include_router(blackboxai_router, tags=["BlackBox AI"])
 app.include_router(monkeybypass_router, tags=["Tamper Monkey"])
+app.include_router(terabox_router, tags=["Terabox API"])
 app.include_router(poster_router, tags=["Poster Scrap"])
+app.include_router(linkvertise_router, tags=["Link Bypass"])
+
+
 
 
 if __name__ == "__main__":
