@@ -1,5 +1,5 @@
 """
-Endpoints package for TrueLink API
+Endpoints package for  API
 """
 from .health import router as health_router
 from .resolve import router as resolve_router
