@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query, HTTPException
 from aiohttp import ClientSession
 
-router = APIRouter(prefix="/poster", tags=["Poster API"])
+router = APIRouter()
 
 # Mapping platforms to API endpoints
 PLATFORM_APIS = {
