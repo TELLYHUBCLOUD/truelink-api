@@ -7,7 +7,6 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
 WORKDIR /app
 
-# Install system dependencies as root
 RUN apt-get update && apt-get install -y \
     curl \
     gnupg \
@@ -28,13 +27,14 @@ RUN apt-get update && apt-get install -y \
     libgl1 \
     fonts-noto \
     fonts-noto-cjk \
-    # Install Node.js
+    fonts-unifont \
+    fonts-ubuntu \
     && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
     && apt-get install -y nodejs \
-    # Clean up
     && apt-get autoremove -y \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
+
 
 COPY requirements.txt .
 
