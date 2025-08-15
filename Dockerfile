@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-# Environment variables
+# Set environment variables
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
@@ -31,35 +31,19 @@ RUN apt-get update && apt-get install -y \
     fonts-noto \
     fonts-noto-cjk \
     fonts-unifont \
-    fonts-ubuntu \
+    fonts-dejavu-core \
     && apt-get autoremove -y \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements
-COPY requirements.txt .
+# Copy project files
+COPY . .
 
-# Ensure pip exists and install Python dependencies
-RUN python3 -m ensurepip --upgrade && \
-    pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir --upgrade truelink && \
-    pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Install Playwright & Chromium (skip --with-deps to avoid Debian missing packages)
-RUN npm install @playwright/test && \
-    npx playwright install chromium
+# Expose port
+EXPOSE 8000
 
-# Create non-root user
-RUN useradd --create-home --shell /bin/bash app && \
-    chown -R app:app /app
-
-# Switch to non-root user
-USER app
-
-# Healthcheck
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:5000/health || exit 1
-
-EXPOSE 5000
-
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "5000"]
+# Command to run your app
+CMD ["python", "main.py"]
