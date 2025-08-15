@@ -1,16 +1,18 @@
 FROM python:3.11-slim
 
-# Set environment variables
+# Environment variables
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
 WORKDIR /app
 
-# Install system dependencies + Playwright requirements
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     curl \
     gnupg \
+    nodejs \
+    npm \
     libnss3 \
     libnspr4 \
     libatk1.0-0 \
@@ -29,42 +31,32 @@ RUN apt-get update && apt-get install -y \
     fonts-noto \
     fonts-noto-cjk \
     fonts-unifont \
-    libcurl4 \
-    libpci3 \
-    libxss1 \
-    libgconf-2-4 \
-    libpangocairo-1.0-0 \
-    libatspi2.0-0 \
-    libpango-1.0-0 \
-    libpangox-1.0-0 \
-    libx11-xcb1 \
-    libxtst6 \
-    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
-    && apt-get install -y nodejs \
+    fonts-ubuntu \
     && apt-get autoremove -y \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
 
+# Copy requirements
 COPY requirements.txt .
 
-# Ensure pip is available
-RUN python3 -m ensurepip --upgrade
-
-# Install Python dependencies
-RUN pip install --no-cache-dir --upgrade pip && \
+# Ensure pip exists and install Python dependencies
+RUN python3 -m ensurepip --upgrade && \
+    pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir --upgrade truelink && \
     pip install --no-cache-dir -r requirements.txt
 
-# Install Playwright Chromium with dependencies
-RUN npx playwright install --with-deps chromium
+# Install Playwright & Chromium (skip --with-deps to avoid Debian missing packages)
+RUN npm install @playwright/test && \
+    npx playwright install chromium
 
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash app && \
     chown -R app:app /app
 
+# Switch to non-root user
 USER app
 
-# Health check
+# Healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:5000/health || exit 1
 
