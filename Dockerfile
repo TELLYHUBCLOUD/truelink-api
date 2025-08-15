@@ -7,7 +7,7 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
 WORKDIR /app
 
-# Install system dependencies - updated list
+# Install system dependencies as root
 RUN apt-get update && apt-get install -y \
     curl \
     gnupg \
@@ -28,7 +28,7 @@ RUN apt-get update && apt-get install -y \
     libgl1 \
     fonts-noto \
     fonts-noto-cjk \
-    # Install Node.js directly
+    # Install Node.js
     && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
     && apt-get install -y nodejs \
     # Clean up
@@ -46,14 +46,14 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir --upgrade truelink && \
     pip install --no-cache-dir -r requirements.txt
 
-# Install Playwright and browsers
+# Install Playwright and browsers as root
 RUN npx playwright install --with-deps chromium
-
-COPY . .
 
 # Create non-root user for security
 RUN useradd --create-home --shell /bin/bash app && \
     chown -R app:app /app
+
+# Switch to non-root user
 USER app
 
 # Health check
