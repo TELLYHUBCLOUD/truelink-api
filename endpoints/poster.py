@@ -3,23 +3,53 @@ from aiohttp import ClientSession
 
 router = APIRouter()
 
-# Mapping platforms to API endpoints
-PLATFORM_APIS = {
-    "primevideo": "https://primevideo.pbx1bots.workers.dev/?url=",
-    "appletv": "https://appletv.pbx1bots.workers.dev/?url=",
-    "airtelxstream": "https://airtelxstream.pbx1bots.workers.dev/?url=",
-    "zee5": "https://zee5.pbx1bots.workers.dev/?url=",
-    "stage": "https://stage.pbx1bots.workers.dev/?url="
+# Platform patterns & APIs
+PLATFORMS = {
+    "primevideo": {
+        "pattern": "primevideo.com",
+        "api": "https://primevideo.pbx1bots.workers.dev/?url="
+    },
+    "appletv": {
+        "pattern": "tv.apple.com",
+        "api": "https://appletv.pbx1bots.workers.dev/?url="
+    },
+    "airtelxstream": {
+        "pattern": "airtelxstream.in",
+        "api": "https://airtelxstream.pbx1bots.workers.dev/?url="
+    },
+    "zee5": {
+        "pattern": "zee5.com",
+        "api": "https://zee5.pbx1bots.workers.dev/?url="
+    },
+    "stage": {
+        "pattern": "stage.in",
+        "api": "https://stage.pbx1bots.workers.dev/?url="
+    }
 }
+@router.get("/platforms")
+async def get_supported_platforms():
+    """Returns all supported platforms with patterns & API endpoints."""
+    return [
+        {
+            "name": name,
+            "pattern": info["pattern"],
+            "api_endpoint": info["api"]
+        }
+        for name, info in PLATFORMS.items()
+    ]
 
 @router.get("/poster")
-async def get_poster(platform: str = Query(..., description="Platform name"),
-                     url: str = Query(..., description="Content URL")):
-    platform = platform.lower()
-    if platform not in PLATFORM_APIS:
-        raise HTTPException(status_code=400, detail="Unsupported platform")
+async def get_poster(url: str = Query(..., description="Content URL from supported platforms")):
+    platform_info = None
+    for name, info in PLATFORMS.items():
+        if info["pattern"] in url:
+            platform_info = info
+            break
 
-    api_url = PLATFORM_APIS[platform] + url
+    if not platform_info:
+        raise HTTPException(status_code=400, detail="Unsupported platform URL")
+
+    api_url = platform_info["api"] + url
 
     async with ClientSession() as session:
         async with session.get(api_url) as resp:
@@ -27,11 +57,11 @@ async def get_poster(platform: str = Query(..., description="Platform name"),
                 raise HTTPException(status_code=resp.status, detail="Failed to fetch data")
             data = await resp.json()
 
-    # Extracting fields from the API response
     return {
         "type": data.get("type", "movie"),
         "title": data.get("title", "Unknown Title"),
-        "year": data.get("year", None),
+        "year": data.get("year"),
         "landscape": data.get("landscape"),
-        "portrait": data.get("portrait")
+        "portrait": data.get("portrait"),
+        "platform": platform_info["pattern"]
     }
