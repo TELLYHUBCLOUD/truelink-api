@@ -32,7 +32,7 @@ class Config:
     RATE_LIMIT_WINDOW = int(os.getenv("RATE_LIMIT_WINDOW", "3600"))  # 1 hour
     
     # API Keys (should be set via environment)
-    BLACKBOX_API_KEY = os.getenv("BLACKBOX_API_KEY")
+    BLACKBOX_API_KEY = os.getenv("sk-DKQbJT2E-FrF1vZH51Vt6g")
     
     # Sensitive data (move to environment variables)
     LARAVEL_SESSION = os.getenv("LARAVEL_SESSION")
