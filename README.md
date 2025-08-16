@@ -1,6 +1,6 @@
 # TrueLink API v3.3 (Production Ready)
 
-A high-performance FastAPI-based HTTP API built around the `truelink` Python library with comprehensive URL resolution, batch processing, direct link extraction, streaming downloads, and JioSaavn music integration.
+A high-performance FastAPI-based HTTP API built around the `truelink` Python library with comprehensive URL resolution, batch processing, direct link extraction, streaming downloads, JioSaavn music integration, AI-powered code assistance, and advanced bypass capabilities.
 
 ## 🚀 Features
 
@@ -11,6 +11,8 @@ A high-performance FastAPI-based HTTP API built around the `truelink` Python lib
 - **Terabox Support**: Specialized Terabox link resolution with dual API fallback
 - **JioSaavn Integration**: Complete music API with search, streaming, and metadata
 - **BlackBox AI Integration**: AI-powered code generation, debugging, and optimization
+- **Bypass Capabilities**: Advanced bypass tools for various platforms and restrictions
+- **Media Scraping**: Poster and metadata extraction from streaming platforms
 
 ### Performance & Reliability
 - **Concurrent Processing**: Batch requests with configurable concurrency limits (default: 5)
@@ -66,12 +68,45 @@ A high-performance FastAPI-based HTTP API built around the `truelink` Python lib
 ### BlackBox AI Code Assistant
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/blackboxai/generate` | POST | Generate code using AI based on description |
-| `/blackboxai/explain` | GET | Explain and analyze existing code |
-| `/blackboxai/debug` | GET | Debug and fix code issues |
-| `/blackboxai/optimize` | GET | Optimize code for performance or readability |
-| `/blackboxai/convert` | GET | Convert code between programming languages |
-| `/blackboxai/chat` | GET | General AI chat for programming questions |
+| `/blackboxai/models` | GET | List available AI models |
+| `/blackboxai/text` | POST | Generate text/code using AI models |
+| `/blackboxai/image` | POST | Process images with AI (upload required) |
+| `/blackboxai/pdf` | POST | Process PDF documents with AI (upload required) |
+
+### Advanced Bypass Tools
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/tmonkey/bypass` | GET | Bypass Cloudflare protection using Tampermonkey scripts |
+| `/linkvertise` | GET | Bypass Linkvertise shortened URLs |
+| `/mediafire` | GET | Extract direct links from MediaFire |
+| `/hxfile` | GET | Bypass HxFile download restrictions |
+| `/letsupload` | GET | Extract direct links from LetsUpload |
+| `/anonfiles` | GET | Bypass AnonFiles and similar platforms |
+| `/fembed` | GET | Extract video links from Fembed |
+| `/sbembed` | GET | Extract video links from SbEmbed |
+| `/onedrive` | GET | Generate direct links for OneDrive files |
+| `/pixeldrain` | GET | Extract direct links from PixelDrain |
+| `/antfiles` | GET | Bypass AntFiles download restrictions |
+| `/streamtape` | GET | Extract video links from StreamTape |
+| `/racaty` | GET | Bypass Racaty download restrictions |
+| `/fichier` | GET | Extract direct links from 1Fichier |
+| `/solidfiles` | GET | Bypass SolidFiles download restrictions |
+| `/krakenfiles` | GET | Extract direct links from KrakenFiles |
+| `/uploadee` | GET | Bypass Upload.ee download restrictions |
+| `/filepress` | GET | Extract Google Drive and Telegram links from FilePress |
+| `/gdtot` | GET | Bypass GDTOT shortened links |
+| `/sharer` | GET | Extract direct links from Sharer platforms |
+| `/wetransfer` | GET | Extract direct links from WeTransfer |
+| `/akmfiles` | GET | Bypass AKMFiles download restrictions |
+| `/shrdsk` | GET | Extract video links from Shrdsk |
+| `/linkbox` | GET | Extract direct links from LinkBox |
+| `/zippyshare` | GET | Extract direct links from ZippyShare |
+
+### Media & Poster Scraping
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/platforms` | GET | List supported streaming platforms |
+| `/poster` | GET | Extract poster and metadata from streaming platforms |
 
 ## ⚙️ Configuration
 
@@ -173,17 +208,48 @@ curl "http://localhost:5000/jiosaavn/artists/1274170"
 
 # Get playlist
 curl "http://localhost:5000/jiosaavn/playlists?id=82914609"
+```
 
+### BlackBox AI Code Generation
+```bash
 # Generate Python code
-curl -X POST "http://localhost:5000/blackboxai/generate" \
-  -H "Content-Type: application/json" \
-  -d '{"query": "create a function to sort a list", "language": "python"}'
+curl -X POST "http://localhost:5000/blackboxai/text" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "prompt=create a function to sort a list&model=blackboxai/mistralai/mistral-nemo:free"
 
-# Explain code
-curl "http://localhost:5000/blackboxai/explain?code=def%20hello():%20print('world')&language=python"
+# Process image with AI
+curl -X POST "http://localhost:5000/blackboxai/image" \
+  -F "prompt=Describe this image" \
+  -F "file=@image.jpg"
 
-# Debug code
-curl "http://localhost:5000/blackboxai/debug?code=print(hello)&error=NameError&language=python"
+# Process PDF with AI
+curl -X POST "http://localhost:5000/blackboxai/pdf" \
+  -F "prompt=Summarize this document" \
+  -F "file=@document.pdf"
+```
+
+### Advanced Bypass Tools
+```bash
+# Bypass Cloudflare with Tampermonkey
+curl "http://localhost:5000/tmonkey/bypass?url=https://protected-site.com"
+
+# Bypass Linkvertise
+curl "http://localhost:5000/linkvertise?url=https://linkvertise.com/123456"
+
+# Extract MediaFire direct link
+curl "http://localhost:5000/mediafire?url=https://mediafire.com/file/abc123"
+
+# Bypass OneDrive restrictions
+curl "http://localhost:5000/onedrive?url=https://onedrive.live.com/download?cid=123"
+```
+
+### Media & Poster Scraping
+```bash
+# Get supported platforms
+curl "http://localhost:5000/platforms"
+
+# Extract poster from streaming platform
+curl "http://localhost:5000/poster?url=https://primevideo.com/detail/movie123"
 ```
 
 ## 🏗️ Architecture
@@ -205,6 +271,10 @@ curl "http://localhost:5000/blackboxai/debug?code=print(hello)&error=NameError&l
     ├── supported_domains.py # Domain listing
     ├── terabox.py        # Terabox integration
     ├── jiosaavn.py       # JioSaavn music API
+    ├── blackboxai.py     # BlackBox AI integration
+    ├── monkeybypass.py   # Tampermonkey bypass
+    ├── linkvertise.py    # Link bypass tools
+    ├── poster.py         # Media scraping
     ├── root.py           # Root endpoint
     └── help.py           # Documentation
 ```
@@ -214,6 +284,7 @@ curl "http://localhost:5000/blackboxai/debug?code=print(hello)&error=NameError&l
 - **FastAPI Framework**: High-performance async web framework
 - **Pydantic Models**: Data validation and serialization
 - **aiohttp**: Async HTTP client for external API calls
+- **Playwright**: Browser automation for advanced bypass
 - **Concurrent Processing**: asyncio-based concurrency control
 - **Error Handling**: Comprehensive exception management
 - **Logging**: Structured logging with performance metrics
@@ -238,6 +309,7 @@ curl "http://localhost:5000/blackboxai/debug?code=print(hello)&error=NameError&l
 - **CORS Configuration**: Secure cross-origin request handling
 - **Host Validation**: Trusted host middleware for security
 - **Resource Limits**: Prevent abuse with configurable limits
+- **File Upload Security**: Safe file handling with size and type validation
 
 ## 📊 Monitoring & Health
 
@@ -288,11 +360,14 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 🔄 Changelog
 
 ### v3.3 (Current)
-- ✅ Fixed JioSaavn path parameter errors
+- ✅ Added BlackBox AI integration for code generation and assistance
+- ✅ Implemented advanced bypass tools (Tampermonkey, Linkvertise, etc.)
+- ✅ Added media scraping capabilities for streaming platforms
+- ✅ Enhanced JioSaavn API with complete endpoint coverage
 - ✅ Improved Terabox concurrent API execution
-- ✅ Enhanced error handling and logging
+- ✅ Enhanced error handling and logging throughout
 - ✅ Optimized performance and resource usage
-- ✅ Updated documentation and examples
+- ✅ Updated comprehensive documentation
 
 ### v3.2
 - ✅ Added JioSaavn music API integration
@@ -307,3 +382,5 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ---
 
 **Built with ❤️ using FastAPI, Python, and modern async technologies**
+
+**Features**: URL Resolution • Music Streaming • AI Code Generation • Advanced Bypass • Media Scraping • Production Ready
