@@ -21,9 +21,30 @@ if TRUELINK_AVAILABLE:
 
 logger = logging.getLogger(__name__)
 
+import re
+from urllib.parse import urlparse, parse_qs
+
 def is_valid_url(url: str) -> bool:
     """Validate if a string is a proper URL"""
     try:
+        # Basic sanitization
+        url = url.strip()
+        if len(url) > 2048:  # Reasonable URL length limit
+            return False
+            
+        # Check for malicious patterns
+        malicious_patterns = [
+            r'javascript:',
+            r'data:',
+            r'vbscript:',
+            r'file:',
+            r'ftp:'
+        ]
+        
+        for pattern in malicious_patterns:
+            if re.search(pattern, url, re.IGNORECASE):
+                return False
+                
         result = urlparse(url)
         return all([result.scheme, result.netloc]) and result.scheme in ('http', 'https')
     except Exception:

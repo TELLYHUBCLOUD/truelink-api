@@ -10,5 +10,28 @@ psutil
 playwright
 bs4 
 lxml 
-base64 
-uuid 
+
+# Security
+python-jose[cryptography]
+passlib[bcrypt]
+
+# Testing
+pytest
+pytest-asyncio
+pytest-cov
+httpx
+
+# Development
+black
+flake8
+isort
+mypy
+bandit
+
+# Monitoring
+prometheus-client
+structlog
+
+# Performance
+uvloop
+orjson
