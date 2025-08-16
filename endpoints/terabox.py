@@ -8,7 +8,8 @@ from fastapi.responses import JSONResponse  # Added missing import
 from pydantic import HttpUrl, BaseModel
 import aiohttp
 import requests  # Added missing import
-from bs4 import BeautifulSoup  # Added missing import
+from bs4 import BeautifulSoup 
+from concurrent.futures import ThreadPoolExecutor # Added missing import
 from models import TeraboxResponse
 
 logger = logging.getLogger(__name__)
