@@ -1,11 +1,3 @@
-# Fixed issues:
-# 1. Corrected boolean values (False/True instead of false/true)
-# 2. Added missing imports (re, requests, BeautifulSoup)
-# 3. Fixed thread blocking issues with async execution
-# 4. Improved error handling and logging
-# 5. Refactored Selenium usage for better performance
-# 6. Standardized response formats
-
 import time
 import logging
 import asyncio
@@ -17,15 +9,6 @@ from pydantic import HttpUrl, BaseModel
 import aiohttp
 import requests  # Added missing import
 from bs4 import BeautifulSoup  # Added missing import
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
-from concurrent.futures import ThreadPoolExecutor
-
 from models import TeraboxResponse
 
 logger = logging.getLogger(__name__)
@@ -210,37 +193,51 @@ async def diskwala_endpoint(url: str = Query(..., description="Diskwala file lin
         )
 
 
-# --- Selenium Helper Functions ---
+# --- Selenium Helper Functions --- (MODIFIED)
 def setup_driver():
-    """Create reusable driver configuration"""
-    chrome_options = Options()
-    chrome_options.add_argument("--headless=new")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--disable-extensions")
-    chrome_options.add_argument("--disable-infobars")
-    chrome_options.add_argument("--window-size=1280,720")
-    return webdriver.Chrome(
-        service=Service(ChromeDriverManager().install()),
-        options=chrome_options
-    )
+    """Create reusable driver configuration with local imports"""
+    try:
+        from selenium import webdriver
+        from selenium.webdriver.chrome.service import Service
+        from selenium.webdriver.chrome.options import Options
+        from webdriver_manager.chrome import ChromeDriverManager
+        
+        chrome_options = Options()
+        chrome_options.add_argument("--headless=new")
+        chrome_options.add_argument("--disable-gpu")
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--disable-extensions")
+        chrome_options.add_argument("--disable-infobars")
+        chrome_options.add_argument("--window-size=1280,720")
+        return webdriver.Chrome(
+            service=Service(ChromeDriverManager().install()),
+            options=chrome_options
+        )
+    except ImportError:
+        logger.error("Selenium dependencies not installed. Install with: pip install selenium webdriver-manager")
+        return None
+    except Exception as e:
+        logger.error(f"Driver setup failed: {str(e)}")
+        return None
 
 def get_dropgalaxy_direct_link(url: str) -> str | None:
     try:
         driver = setup_driver()
-        driver.get(url)
+        if not driver:
+            return None
+            
+        from selenium.webdriver.common.by import By
+        from selenium.webdriver.support.ui import WebDriverWait
+        from selenium.webdriver.support import expected_conditions as EC
         
-        # Reduced timeout and better element waiting
+        driver.get(url)
         wait = WebDriverWait(driver, 20)
         button = wait.until(EC.element_to_be_clickable((By.ID, "direct_download")))
         button.click()
-        
-        # Wait for download button to be ready
         link = wait.until(
             EC.presence_of_element_located((By.ID, "downloadbtn"))
         ).get_attribute("href")
-        
         return link
     except Exception as e:
         logger.error(f"DropGalaxy error: {str(e)}")
@@ -252,13 +249,17 @@ def get_dropgalaxy_direct_link(url: str) -> str | None:
 def get_upfiles_direct_link(url: str) -> str | None:
     try:
         driver = setup_driver()
-        driver.get(url)
+        if not driver:
+            return None
+            
+        from selenium.webdriver.common.by import By
+        from selenium.webdriver.support.ui import WebDriverWait
+        from selenium.webdriver.support import expected_conditions as EC
         
+        driver.get(url)
         wait = WebDriverWait(driver, 20)
         btn = wait.until(EC.element_to_be_clickable((By.ID, "btn_download")))
         btn.click()
-        
-        # Wait for URL change instead of fixed sleep
         wait.until(EC.url_changes(url))
         return driver.current_url
     except Exception as e:
@@ -268,12 +269,10 @@ def get_upfiles_direct_link(url: str) -> str | None:
         if 'driver' in locals():
             driver.quit()
 
-
-# --- File Hosting Endpoints ---
+# --- File Hosting Endpoints --- (ADDED ERROR HANDLING)
 @router.get("/dropgalaxy")
 async def dropgalaxy_api(url: str = Query(..., description="DropGalaxy file URL")):
     try:
-        # Run in thread to avoid blocking
         link = await asyncio.get_event_loop().run_in_executor(
             executor, 
             get_dropgalaxy_direct_link, 
@@ -281,7 +280,10 @@ async def dropgalaxy_api(url: str = Query(..., description="DropGalaxy file URL"
         )
         
         if not link:
-            raise HTTPException(status_code=400, detail="Link extraction failed")
+            raise HTTPException(
+                status_code=500,
+                detail="Selenium dependencies not installed or scraping failed"
+            )
             
         return {
             "success": True,
@@ -290,16 +292,18 @@ async def dropgalaxy_api(url: str = Query(..., description="DropGalaxy file URL"
             "direct_link": link
         }
     except Exception as e:
-        return {
-            "success": False,
-            "host": "DropGalaxy",
-            "error": str(e)
-        }
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "host": "DropGalaxy",
+                "error": str(e)
+            }
+        )
 
 @router.get("/upfiles")
 async def upfiles_api(url: str = Query(..., description="UpFiles.com file URL")):
     try:
-        # Run in thread to avoid blocking
         link = await asyncio.get_event_loop().run_in_executor(
             executor, 
             get_upfiles_direct_link, 
@@ -307,7 +311,10 @@ async def upfiles_api(url: str = Query(..., description="UpFiles.com file URL"))
         )
         
         if not link:
-            raise HTTPException(status_code=400, detail="Link extraction failed")
+            raise HTTPException(
+                status_code=500,
+                detail="Selenium dependencies not installed or scraping failed"
+            )
             
         return {
             "success": True,
@@ -316,8 +323,11 @@ async def upfiles_api(url: str = Query(..., description="UpFiles.com file URL"))
             "direct_link": link
         }
     except Exception as e:
-        return {
-            "success": False,
-            "host": "UpFiles",
-            "error": str(e)
-        }
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "host": "UpFiles",
+                "error": str(e)
+            }
+        )
