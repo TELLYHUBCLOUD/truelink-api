@@ -11,6 +11,8 @@ psutil
 playwright
 bs4 
 lxml 
+selenium
+gunicorn
 
 # Security
 python-jose[cryptography]
