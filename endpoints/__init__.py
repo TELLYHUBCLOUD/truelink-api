@@ -17,6 +17,7 @@ from .monkeybypass import router as monkeybypass_router
 from .poster import router as poster_router
 from .linkvertise import router as linkvertise_router 
 from .scrap import router as scrap_router
+from .dllink import router as dllink_router
 
 
 __all__ = [
@@ -35,5 +36,6 @@ __all__ = [
     "monkeybypass_router",
     "poster_router",
     "linkvertise_router",
-    "scrap_router"
+    "scrap_router",
+    "dllink_router"
 ]
