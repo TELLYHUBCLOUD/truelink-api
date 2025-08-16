@@ -22,6 +22,7 @@ class Config:
     DEFAULT_TIMEOUT = int(os.getenv("DEFAULT_TIMEOUT", "20"))
     MAX_TIMEOUT = int(os.getenv("MAX_TIMEOUT", "120"))
     CONCURRENT_LIMIT = int(os.getenv("CONCURRENT_LIMIT", "5"))
+    CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "65536"))
     ENABLE_CORS = os.getenv("ENABLE_CORS", "true").lower() == "true"
     TRUSTED_HOSTS = [host.strip() for host in os.getenv("TRUSTED_HOSTS", "*").split(",")]
 

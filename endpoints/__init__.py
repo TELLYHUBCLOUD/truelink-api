@@ -1,5 +1,5 @@
 """
-Endpoints package for  API
+Endpoints package for TrueLink API
 """
 from .health import router as health_router
 from .resolve import router as resolve_router
@@ -33,5 +33,5 @@ __all__ = [
     "blackboxai_router",
     "monkeybypass_router",
     "poster_router",
-    "linkvertise"
+    "linkvertise_router"
 ]

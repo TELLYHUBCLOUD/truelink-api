@@ -122,5 +122,5 @@ async def terabox_endpoint(
 
     return TeraboxResponse(
         status="error",
-        message=f"Both APIs failed. API 1: {api1_result.get('error')}, API 2: {api2_result.get('error')}"
+        file_name=f"Both APIs failed. API 1: {api1_result.get('error')}, API 2: {api2_result.get('error')}"
     )
