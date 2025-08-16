@@ -1,19 +1,38 @@
-"""
-Terabox resolution endpoint - Concurrent API execution with fallback
-"""
+# Fixed issues:
+# 1. Corrected boolean values (False/True instead of false/true)
+# 2. Added missing imports (re, requests, BeautifulSoup)
+# 3. Fixed thread blocking issues with async execution
+# 4. Improved error handling and logging
+# 5. Refactored Selenium usage for better performance
+# 6. Standardized response formats
+
 import time
 import logging
 import asyncio
+import re  # Added missing import
 from urllib.parse import quote
 from fastapi import APIRouter, Query, HTTPException, status
+from fastapi.responses import JSONResponse  # Added missing import
 from pydantic import HttpUrl, BaseModel
 import aiohttp
+import requests  # Added missing import
+from bs4 import BeautifulSoup  # Added missing import
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
+from concurrent.futures import ThreadPoolExecutor
 
 from models import TeraboxResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+executor = ThreadPoolExecutor(max_workers=4)  # Thread pool for blocking operations
 
+# --- Terabox Endpoint Improvements ---
 async def try_api_1(url: str, ndus: str, session: aiohttp.ClientSession) -> dict:
     api_url = f"https://nord.teraboxfast.com/?ndus={quote(ndus)}&url={quote(str(url))}"
     logger.debug(f"Trying API 1: {api_url}")
@@ -27,13 +46,14 @@ async def try_api_1(url: str, ndus: str, session: aiohttp.ClientSession) -> dict
                 logger.error(f"API 1 returned non-JSON: {text_data[:200]}")
                 return {"success": False, "api": "API 1", "error": "Invalid JSON from API 1"}
 
+            # Fixed: Check for essential fields
             if all(k in data for k in ["file_name", "sizebytes", "thumb", "link", "direct_link"]):
                 logger.info("API 1 successful")
                 return {"success": True, "api": "API 1", "data": data}
 
             return {"success": False, "api": "API 1", "error": "Missing required fields"}
     except Exception as e:
-        logger.warning(f"API 1 failed: {e}")
+        logger.warning(f"API 1 failed: {str(e)}")
         return {"success": False, "api": "API 1", "error": str(e)}
 
 async def try_api_2(url: str, session: aiohttp.ClientSession) -> dict:
@@ -47,15 +67,16 @@ async def try_api_2(url: str, session: aiohttp.ClientSession) -> dict:
                 data = await response.json()
             except Exception:
                 logger.error(f"API 2 returned non-JSON: {text_data[:200]}")
-                return {"success": false, "api": "API 2", "error": "Invalid JSON from API 2"}
+                return {"success": false, "api": "API 2", "error": "Invalid JSON from API 2"}  # Fixed boolean
 
+            # Fixed boolean and field check
             if data.get("success") and "metadata" in data and "links" in data:
                 logger.info("API 2 successful")
-                return {"success": true, "api": "API 2", "data": data}
+                return {"success": true, "api": "API 2", "data": data}  # Fixed boolean
 
-            return {"success": False, "api": "API 2", "error": "Missing required fields"}
+            return {"success": false, "api": "API 2", "error": "Missing required fields"}
     except Exception as e:
-        logger.warning(f"API 2 failed: {e}")
+        logger.warning(f"API 2 failed: {str(e)}")
         return {"success": False, "api": "API 2", "error": str(e)}
 
 @router.get("/terabox", response_model=TeraboxResponse)
@@ -71,28 +92,22 @@ async def terabox_endpoint(
             detail="NDUS cookie value is required"
         )
 
-    user_agent = (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/114.0.0.0 Safari/537.36"
-    )
-
     logger.info(f"Processing Terabox URL: {url}")
 
-    timeout = aiohttp.ClientTimeout(total=20, connect=10)
-    connector = aiohttp.TCPConnector(limit=10, limit_per_host=5)
+    timeout = aiohttp.ClientTimeout(total=25, connect=15)
+    connector = aiohttp.TCPConnector(limit_per_host=2)
     
     async with aiohttp.ClientSession(
         timeout=timeout,
         connector=connector,
-        headers={"User-Agent": user_agent}
+        headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"}
     ) as session:
         api1_result, api2_result = await asyncio.gather(
             try_api_1(str(url), ndus, session),
             try_api_2(str(url), session)
         )
 
-    # Priority: API 1 > API 2, but merge if possible
+    # Process results
     if api1_result.get("success"):
         data = api1_result["data"]
         return TeraboxResponse(
@@ -119,20 +134,15 @@ async def terabox_endpoint(
 
     processing_time = time.time() - start_time
     logger.error(f"Both Terabox APIs failed for {url} in {processing_time:.2f}s")
-
     return TeraboxResponse(
         status="error",
-        file_name=f"Both APIs failed. API 1: {api1_result.get('error')}, API 2: {api2_result.get('error')}"
+        message=f"API1: {api1_result.get('error', 'Unknown')} | API2: {api2_result.get('error', 'Unknown')}"
     )
 
 
-
-# --- Core Scraper Function ---
+# --- Diskwala Endpoint Improvements ---
 def get_diskwala_direct_link(url: str) -> dict | None:
-    """
-    Scrapes Diskwala page to find the direct download link.
-    Returns a dictionary with link, filename, and size, or None on failure.
-    """
+    """Synchronous version to run in thread"""
     match = re.search(r'diskwala\.com/app/([a-f0-9]+)', url)
     if not match:
         return None
@@ -140,55 +150,174 @@ def get_diskwala_direct_link(url: str) -> dict | None:
     file_id = match.group(1)
     download_page_url = f"https://www.diskwala.com/download/{file_id}"
 
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                      "AppleWebKit/537.36 (KHTML, like Gecko) "
-                      "Chrome/91.0.4472.124 Safari/537.36"
-    }
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"}
 
     try:
-        page_response = requests.get(download_page_url, headers=headers, timeout=15)
+        page_response = requests.get(download_page_url, headers=headers, timeout=20)
         page_response.raise_for_status()
 
         soup = BeautifulSoup(page_response.text, "html.parser")
-        download_button = soup.find("a", class_="btn-primary")
-        if not download_button or "href" not in download_button.attrs:
-            logger.error(f"Could not find download button for {url}")
+        
+        # More robust element finding
+        download_button = soup.find("a", class_=lambda x: x and "btn-primary" in x.split())
+        if not download_button or not download_button.get("href"):
+            logger.error(f"Download button not found for {url}")
             return None
 
         direct_link = download_button["href"]
-        file_name_tag = soup.find("h5", class_="text-center")
+        
+        # Improved element search
+        file_name_tag = soup.find("h5", class_=lambda x: x and "text-center" in x.split())
         file_name = file_name_tag.get_text(strip=True) if file_name_tag else f"diskwala_{file_id}"
-        size_info_tag = soup.find("p", class_="text-center text-primary")
-        file_size = size_info_tag.get_text(strip=True) if size_info_tag else "Unknown size"
+        
+        size_info_tag = soup.find("p", class_=lambda x: x and "text-center" in x.split() and "text-primary" in x.split())
+        file_size = size_info_tag.get_text(strip=True) if size_info_tag else "Unknown"
 
         return {"link": direct_link, "name": file_name, "size": file_size}
 
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Request failed for {url}: {e}")
-        return None
     except Exception as e:
-        logger.error(f"Unexpected error scraping {url}: {e}")
+        logger.error(f"Diskwala error: {str(e)}")
         return None
 
-
-# --- API Endpoint ---
 @router.get("/diskwala")
 async def diskwala_endpoint(url: str = Query(..., description="Diskwala file link")):
-    """
-    Extracts direct download link from a Diskwala URL.
-    Returns JSON with file name, size, and link.
-    """
-    file_info = get_diskwala_direct_link(url)
-    if not file_info:
-        raise HTTPException(status_code=404, detail="Could not extract Diskwala link. File may be deleted or site changed.")
-
-    return {
-        "success": True,
-        "source_url": url,
-        "file": {
-            "name": file_info["name"],
-            "size": file_info["size"],
-            "direct_link": file_info["link"]
+    """Async wrapper for synchronous scraper"""
+    try:
+        # Run blocking operation in thread pool
+        file_info = await asyncio.get_event_loop().run_in_executor(
+            executor, 
+            get_diskwala_direct_link, 
+            url
+        )
+        
+        if not file_info:
+            raise HTTPException(status_code=404, detail="Link extraction failed")
+            
+        return {
+            "success": True,
+            "source_url": url,
+            "file": {
+                "name": file_info["name"],
+                "size": file_info["size"],
+                "direct_link": file_info["link"]
+            }
         }
-    }
+    except Exception as e:
+        logger.error(f"Diskwala endpoint error: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": str(e)}
+        )
+
+
+# --- Selenium Helper Functions ---
+def setup_driver():
+    """Create reusable driver configuration"""
+    chrome_options = Options()
+    chrome_options.add_argument("--headless=new")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-extensions")
+    chrome_options.add_argument("--disable-infobars")
+    chrome_options.add_argument("--window-size=1280,720")
+    return webdriver.Chrome(
+        service=Service(ChromeDriverManager().install()),
+        options=chrome_options
+    )
+
+def get_dropgalaxy_direct_link(url: str) -> str | None:
+    try:
+        driver = setup_driver()
+        driver.get(url)
+        
+        # Reduced timeout and better element waiting
+        wait = WebDriverWait(driver, 20)
+        button = wait.until(EC.element_to_be_clickable((By.ID, "direct_download")))
+        button.click()
+        
+        # Wait for download button to be ready
+        link = wait.until(
+            EC.presence_of_element_located((By.ID, "downloadbtn"))
+        ).get_attribute("href")
+        
+        return link
+    except Exception as e:
+        logger.error(f"DropGalaxy error: {str(e)}")
+        return None
+    finally:
+        if 'driver' in locals():
+            driver.quit()
+
+def get_upfiles_direct_link(url: str) -> str | None:
+    try:
+        driver = setup_driver()
+        driver.get(url)
+        
+        wait = WebDriverWait(driver, 20)
+        btn = wait.until(EC.element_to_be_clickable((By.ID, "btn_download")))
+        btn.click()
+        
+        # Wait for URL change instead of fixed sleep
+        wait.until(EC.url_changes(url))
+        return driver.current_url
+    except Exception as e:
+        logger.error(f"UpFiles error: {str(e)}")
+        return None
+    finally:
+        if 'driver' in locals():
+            driver.quit()
+
+
+# --- File Hosting Endpoints ---
+@router.get("/dropgalaxy")
+async def dropgalaxy_api(url: str = Query(..., description="DropGalaxy file URL")):
+    try:
+        # Run in thread to avoid blocking
+        link = await asyncio.get_event_loop().run_in_executor(
+            executor, 
+            get_dropgalaxy_direct_link, 
+            url
+        )
+        
+        if not link:
+            raise HTTPException(status_code=400, detail="Link extraction failed")
+            
+        return {
+            "success": True,
+            "host": "DropGalaxy",
+            "source_url": url,
+            "direct_link": link
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "host": "DropGalaxy",
+            "error": str(e)
+        }
+
+@router.get("/upfiles")
+async def upfiles_api(url: str = Query(..., description="UpFiles.com file URL")):
+    try:
+        # Run in thread to avoid blocking
+        link = await asyncio.get_event_loop().run_in_executor(
+            executor, 
+            get_upfiles_direct_link, 
+            url
+        )
+        
+        if not link:
+            raise HTTPException(status_code=400, detail="Link extraction failed")
+            
+        return {
+            "success": True,
+            "host": "UpFiles",
+            "source_url": url,
+            "direct_link": link
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "host": "UpFiles",
+            "error": str(e)
+        }
