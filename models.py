@@ -71,4 +71,3 @@ class TeraboxResponse(BaseModel):
     dl1: Optional[str] = Field(None, description="Download link 1")
     dl2: Optional[str] = Field(None, description="Download link 2")
     size: Optional[str] = Field(None, description="Human readable file size")
-    message: Optional[str] = Field(None, description="Error message if any")

@@ -1,5 +1,5 @@
 """
-Advanced TrueLink API v3.1 - Main Application
+Advanced TrueLink API v3.2 - Main Application
 High-performance FastAPI-based HTTP API for URL resolution
 """
 import os
@@ -24,7 +24,12 @@ from endpoints import (
     terabox_router,
     root_router,
     help_router,
-    jiosaavn_router
+    jiosaavn_router,
+    blackboxai_router,
+    monkeybypass_router,
+    poster_router,
+    linkvertise_router,
+    scrap_router
 )
 
 # ---------- Logging Setup ----------
@@ -50,8 +55,8 @@ async def lifespan(app: FastAPI):
 # ---------- FastAPI App ----------
 app = FastAPI(
     title="Advanced TrueLink API",
-    version="3.1",
-    description="High-performance API for resolving URLs to direct download links with modular architecture",
+    version="3.3",
+    description="High-performance API for resolving URLs to direct download links with JioSaavn music integration",
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan
@@ -98,17 +103,27 @@ async def general_exception_handler(request: Request, exc: Exception):
     )
 
 # ---------- Include Routers ----------
-app.include_router(root_router, tags=["Root"])
-app.include_router(health_router, tags=["Health"])
-app.include_router(help_router, tags=["Help"])
-app.include_router(resolve_router, tags=["Resolution"])
-app.include_router(batch_router, tags=["Batch"])
-app.include_router(direct_router, tags=["Direct Links"])
-app.include_router(redirect_router, tags=["Redirect"])
-app.include_router(download_stream_router, tags=["Streaming"])
-app.include_router(supported_domains_router, tags=["Domains"])
-app.include_router(terabox_router, tags=["Terabox"])
-app.include_router(jiosaavn_router, tags=["JioSaavn"])
+app.include_router(root_router, tags=["System info"])
+app.include_router(health_router, tags=["System info"])
+app.include_router(help_router, tags=["System info"])
+app.include_router(supported_domains_router, tags=["Truelink library"])
+app.include_router(direct_router, tags=["Truelink library"])
+app.include_router(redirect_router, tags=["Truelink library"])
+app.include_router(download_stream_router, tags=["Truelink library"])
+app.include_router(resolve_router, tags=["Truelink library"])
+app.include_router(batch_router, tags=["Truelink library"])
+app.include_router(jiosaavn_router, tags=["JioSaavn API"])
+app.include_router(blackboxai_router, tags=["BlackBox AI"])
+app.include_router(monkeybypass_router, tags=["Tamper Monkey"])
+app.include_router(terabox_router, tags=["Terabox API"])
+app.include_router(poster_router, tags=["Poster Scrap"])
+app.include_router(linkvertise_router, tags=["Link Bypass"])
+app.include_router(scrap_router, tags=["Link Bypass"])
+
+
+
+
+
 
 if __name__ == "__main__":
     import uvicorn

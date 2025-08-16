@@ -32,7 +32,7 @@ async def make_jiosaavn_request(endpoint: str, params: Dict[str, Any] = None) ->
     """Make request to JioSaavn API with error handling"""
     url = f"{JIOSAAVN_BASE_URL}/{endpoint.lstrip('/')}"
     
-    timeout = aiohttp.ClientTimeout(total=30, connect=10)
+    timeout = aiohttp.ClientTimeout(total=20, connect=8)
     
     async with aiohttp.ClientSession(timeout=timeout) as session:
         try:
@@ -42,17 +42,17 @@ async def make_jiosaavn_request(endpoint: str, params: Dict[str, Any] = None) ->
                 else:
                     raise HTTPException(
                         status_code=response.status,
-                        detail=f"JioSaavn API returned status {response.status}"
+                        detail=f"JioSaavn API error: HTTP {response.status}"
                     )
         except asyncio.TimeoutError:
             raise HTTPException(
                 status_code=status.HTTP_408_REQUEST_TIMEOUT,
-                detail="JioSaavn API request timed out"
+                detail="JioSaavn API timeout - please try again"
             )
         except aiohttp.ClientError as e:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail=f"JioSaavn API connection error: {str(e)}"
+                detail=f"JioSaavn API unavailable: {str(e)}"
             )
 
 @router.get("/jiosaavn/search", response_model=JioSaavnResponse)

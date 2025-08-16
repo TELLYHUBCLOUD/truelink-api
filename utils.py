@@ -101,7 +101,8 @@ def extract_direct_links(resolved_data: Dict[str, Any]) -> List[str]:
     links = set()  # Use set to avoid duplicates
     possible_fields = [
         "direct_links", "files", "items", "url", "download_url", 
-        "direct_url", "links", "file_url", "download_link", "dl_link"
+        "direct_url", "links", "file_url", "download_link", "dl_link",
+        "downloadUrl", "direct_link", "dl1", "dl2"
     ]
 
     def is_valid_download_url(url_str: str) -> bool:
@@ -110,7 +111,10 @@ def extract_direct_links(resolved_data: Dict[str, Any]) -> List[str]:
             return False
         if not url_str.startswith(("http://", "https://")):
             return False
-        if any(domain in url_str.lower() for domain in ["javascript:", "mailto:", "tel:"]):
+        # Skip invalid protocols and empty URLs
+        if any(protocol in url_str.lower() for protocol in ["javascript:", "mailto:", "tel:", "data:"]):
+            return False
+        if len(url_str.strip()) < 10:  # Too short to be valid URL
             return False
         return True
 
@@ -131,6 +135,7 @@ def extract_direct_links(resolved_data: Dict[str, Any]) -> List[str]:
                 if field in obj and obj[field]:
                     walk_data(obj[field], depth + 1)
             
+            # Also check nested structures
             for k, v in obj.items():
                 if k not in possible_fields:
                     walk_data(v, depth + 1)

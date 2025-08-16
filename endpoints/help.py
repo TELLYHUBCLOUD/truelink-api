@@ -11,13 +11,14 @@ router = APIRouter()
 async def help_page():
     """Comprehensive API documentation"""
     return {
-        "api": "Advanced TrueLink API v3.1",
+        "api": "Advanced TrueLink API v3.3",
         "description": "High-performance API for resolving URLs to direct download links",
         "features": [
             "Single and batch URL resolution",
             "Direct link extraction",
             "Streaming downloads", 
             "Terabox support",
+            "JioSaavn music API integration",
             "Comprehensive error handling",
             "Request validation",
             "Performance monitoring"
@@ -31,7 +32,17 @@ async def help_page():
             "/redirect": "Redirect to the first resolved direct link",
             "/download-stream": "Stream resolved content directly to client",
             "/terabox": "Resolve Terabox links with NDUS cookie",
-            "/jiosaavn/*": "JioSaavn music API endpoints for search and streaming",
+            "/jiosaavn/search": "Search JioSaavn for songs, albums, artists, playlists",
+            "/jiosaavn/songs": "Get JioSaavn songs by ID or link",
+            "/jiosaavn/albums": "Get JioSaavn albums by ID or link",
+            "/jiosaavn/artists": "Get JioSaavn artists by ID or link",
+            "/jiosaavn/playlists": "Get JioSaavn playlists by ID or link",
+            "/blackboxai/generate": "Generate code using BlackBox AI",
+            "/blackboxai/explain": "Explain code using BlackBox AI",
+            "/blackboxai/debug": "Debug and fix code using BlackBox AI",
+            "/blackboxai/optimize": "Optimize code for performance/readability",
+            "/blackboxai/convert": "Convert code between programming languages",
+            "/blackboxai/chat": "General chat with BlackBox AI",
             "/help": "Show this comprehensive help page",
             "/docs": "Interactive API documentation (Swagger UI)",
             "/redoc": "Alternative API documentation (ReDoc)"

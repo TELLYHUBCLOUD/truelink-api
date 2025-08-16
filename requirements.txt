@@ -5,4 +5,10 @@ pydantic
 aiohttp
 python-multipart
 requests
+cloudscraper
 psutil
+playwright
+bs4 
+lxml 
+base64 
+uuid 

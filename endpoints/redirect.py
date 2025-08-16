@@ -1,10 +1,9 @@
 """
-Redirect to direct link endpoint
+Redirect to direct link endpoint (debug-friendly)
 """
 import logging
 from fastapi import APIRouter, Query, HTTPException, status
 from fastapi.responses import RedirectResponse
-from pydantic import HttpUrl
 
 from config import Config
 from utils import resolve_single, extract_direct_links
@@ -14,27 +13,58 @@ router = APIRouter()
 
 @router.get("/redirect")
 async def redirect_to_direct(
-    url: HttpUrl = Query(...),
-    timeout: int = Query(Config.DEFAULT_TIMEOUT, ge=1, le=Config.MAX_TIMEOUT),
-    retries: int = Query(3, ge=0, le=10),
-    cache: bool = Query(True)
+    url: str = Query(..., description="URL to resolve and redirect"),
+    timeout: int = Query(Config.DEFAULT_TIMEOUT, ge=1, le=Config.MAX_TIMEOUT, description="Request timeout in seconds"),
+    retries: int = Query(3, ge=0, le=10, description="Number of retry attempts"),
+    cache: bool = Query(True, description="Enable/disable caching")
 ):
-    """Redirect to the first available direct download link"""
-    result = await resolve_single(str(url), timeout=timeout, retries=retries, use_cache=cache)
-    
-    if result.status != "success":
+    """
+    Resolve the given URL and redirect to the first available direct link.
+    This version:
+    - Accepts any valid string URL (not just strict HttpUrl)
+    - Adds full debug logging for traceability
+    - Handles unexpected resolver returns safely
+    """
+    try:
+        logger.debug(f"Starting redirect for: {url}")
+        logger.debug(f"Params: timeout={timeout}, retries={retries}, cache={cache}")
+
+        # Call the resolver
+        result = await resolve_single(url, timeout=timeout, retries=retries, use_cache=cache)
+        logger.debug(f"Resolver returned: {result}")
+
+        # Validate result object
+        if not hasattr(result, "status"):
+            raise RuntimeError(f"Unexpected resolver return type: {type(result)}")
+
+        if result.status != "success":
+            logger.warning(f"Resolver failed with status={result.status}, message={getattr(result, 'message', '')}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=getattr(result, "message", "Failed to resolve URL")
+            )
+
+        # Extract direct links
+        direct_links = extract_direct_links(getattr(result, "data", {}) or {})
+        logger.debug(f"Extracted direct links: {direct_links}")
+
+        if not direct_links:
+            logger.warning(f"No direct links found for {url}")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No direct download links found"
+            )
+
+        first_link = direct_links[0]
+        logger.info(f"Redirecting to first direct link: {first_link}")
+
+        return RedirectResponse(url=first_link, status_code=status.HTTP_302_FOUND)
+
+    except HTTPException:
+        raise  # Pass through known HTTP errors
+    except Exception as exc:
+        logger.exception("Unexpected error in redirect_to_direct")
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=result.message or "Failed to resolve URL"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Redirect failed: {str(exc)}"
         )
-    
-    direct_links = extract_direct_links(result.data or {})
-    
-    if not direct_links:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No direct download links found"
-        )
-    
-    logger.info(f"Redirecting to: {direct_links[0]}")
-    return RedirectResponse(url=direct_links[0], status_code=status.HTTP_302_FOUND)
