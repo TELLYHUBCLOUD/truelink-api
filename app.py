@@ -28,7 +28,8 @@ from endpoints import (
     blackboxai_router,
     monkeybypass_router,
     poster_router,
-    linkvertise_router
+    linkvertise_router,
+    scrap_router
 )
 
 # ---------- Logging Setup ----------
@@ -117,6 +118,9 @@ app.include_router(monkeybypass_router, tags=["Tamper Monkey"])
 app.include_router(terabox_router, tags=["Terabox API"])
 app.include_router(poster_router, tags=["Poster Scrap"])
 app.include_router(linkvertise_router, tags=["Link Bypass"])
+app.include_router(scrap_router, tags=["Link Bypass"])
+
+
 
 
 
