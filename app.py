@@ -5,12 +5,15 @@ High-performance FastAPI-based HTTP API for URL resolution
 import os
 import logging
 import time
+import traceback
+from datetime import datetime
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 
 from config import Config, TRUELINK_AVAILABLE, app_start_time
 from endpoints import (
@@ -63,6 +66,8 @@ app = FastAPI(
 )
 
 # ---------- Middleware ----------
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
 if Config.ENABLE_CORS:
     app.add_middleware(
         CORSMiddleware,
@@ -77,6 +82,29 @@ app.add_middleware(
     allowed_hosts=Config.TRUSTED_HOSTS
 )
 
+# Add request logging middleware
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    
+    # Log request
+    logger.info(f"Request: {request.method} {request.url}")
+    
+    try:
+        response = await call_next(request)
+        process_time = time.time() - start_time
+        
+        # Log response
+        logger.info(f"Response: {response.status_code} - {process_time:.3f}s")
+        response.headers["X-Process-Time"] = str(process_time)
+        
+        return response
+    except Exception as e:
+        process_time = time.time() - start_time
+        logger.error(f"Request failed: {str(e)} - {process_time:.3f}s")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise
+
 # ---------- Exception Handlers ----------
 @app.exception_handler(ValueError)
 async def value_error_handler(request: Request, exc: ValueError):
@@ -86,7 +114,8 @@ async def value_error_handler(request: Request, exc: ValueError):
         content={
             "error": "Invalid input", 
             "message": str(exc),
-            "timestamp": time.time()
+            "timestamp": datetime.utcnow().isoformat(),
+            "path": str(request.url.path)
         }
     )
 
@@ -98,7 +127,9 @@ async def general_exception_handler(request: Request, exc: Exception):
         content={
             "error": "Internal server error",
             "message": "An unexpected error occurred",
-            "timestamp": time.time()
+            "timestamp": datetime.utcnow().isoformat(),
+            "path": str(request.url.path),
+            "request_id": str(id(request))
         }
     )
 

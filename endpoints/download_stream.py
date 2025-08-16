@@ -98,6 +98,8 @@ async def download_stream(
             logger.debug(f"Prepared response headers: {headers}")
 
             async def stream_generator():
+                response_closed = False
+                session_closed = False
                 try:
                     logger.debug("Starting stream_generator...")
                     async for chunk in response.content.iter_chunked(Config.CHUNK_SIZE):
@@ -111,7 +113,12 @@ async def download_stream(
                     raise
                 finally:
                     logger.debug("Cleaning up resources in stream_generator...")
-                    await cleanup_resources(response, session)
+                    if not response_closed and response:
+                        response.close()
+                        response_closed = True
+                    if not session_closed and session:
+                        await session.close()
+                        session_closed = True
 
             logger.debug("Returning StreamingResponse to client.")
             return StreamingResponse(
