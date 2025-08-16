@@ -65,9 +65,11 @@ BLACKBOX_MODELS = [
 
 BLACKBOX_API_URL = "https://api.blackbox.ai/api"
 
+import os
+
 def get_headers():
     """Dynamically get headers with API key from environment"""
-    api_key = "sk-DKQbJT2E-FrF1vZH51Vt6g"
+    api_key = os.getenv("BLACKBOX_API_KEY")
     if not api_key:
         logger.error("BLACKBOX_API_KEY environment variable not set")
         raise HTTPException(
