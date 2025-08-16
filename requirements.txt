@@ -1,41 +1,37 @@
+# FastAPI & ASGI
 fastapi
-uvicorn
-truelink
+uvicorn[standard]
+gunicorn
+uvloop
+orjson
+# Core
 pydantic
 aiohttp
-python-multipart
-pydantic
 requests
 cloudscraper
 psutil
+# Web Scraping / Automation
 playwright
-bs4 
-lxml 
+bs4
+lxml
 selenium
-gunicorn
 webdriver-manager
-
-# Security
+truelink
+# Security & Auth
 python-jose[cryptography]
 passlib[bcrypt]
-
-# Testing
-pytest
-pytest-asyncio
-pytest-cov
-httpx
-
-# Development
+# Monitoring & Logging
+prometheus-client
+structlog
+# Development & Linting
 black
 flake8
 isort
 mypy
 bandit
-
-# Monitoring
-prometheus-client
-structlog
-
-# Performance
-uvloop
-orjson
+# Testing
+pytest
+pytest-asyncio
+pytest-cov
+httpx
+python-multipart
