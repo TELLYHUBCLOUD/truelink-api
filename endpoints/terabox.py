@@ -6,7 +6,7 @@ import logging
 import asyncio
 from urllib.parse import quote
 from fastapi import APIRouter, Query, HTTPException, status
-from pydantic import HttpUrl
+from pydantic import HttpUrl, BaseModel
 import aiohttp
 
 from models import TeraboxResponse
