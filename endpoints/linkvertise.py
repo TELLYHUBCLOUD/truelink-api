@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Query
+from fastapi import HTTPException
 from urllib.parse import quote_plus, urlparse
 import aiohttp
 import logging
@@ -54,16 +55,17 @@ async def bypass(url: str) -> str:
         raise HTTPException(status_code=400, detail=f"Bypass failed: {str(e)}")
 
 # Mediafire bypass
-def mediafire(url: str) -> str:
+async def mediafire(url: str) -> str:
     direct_pattern = r"https?:\/\/download\d+\.mediafire\.com\/\S+\/\S+\/\S+"
     final_link = re.findall(direct_pattern, url)
     if final_link:
         return final_link[0]
 
-    cget = create_scraper().request
     try:
-        url = cget("get", url).url
-        page = cget("get", url).text
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                url = str(response.url)
+                page = await response.text()
     except Exception as e:
         return f"ERROR: {e.__class__.__name__}"
 
