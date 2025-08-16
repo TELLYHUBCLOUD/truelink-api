@@ -32,7 +32,8 @@ from endpoints import (
     monkeybypass_router,
     poster_router,
     linkvertise_router,
-    scrap_router
+    scrap_router,
+    dllink_router
 )
 
 # ---------- Logging Setup ----------
@@ -150,6 +151,7 @@ app.include_router(terabox_router, tags=["Terabox API"])
 app.include_router(poster_router, tags=["Poster Scrap"])
 app.include_router(linkvertise_router, tags=["Link Bypass"])
 app.include_router(scrap_router, tags=["Link Bypass"])
+app.include_router(dllink_router, tags=["DL Links"])
 
 
 
