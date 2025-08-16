@@ -288,7 +288,8 @@ def krakenfiles(url: str) -> str:
     try:
         res = sess.get(url)
         html = etree.HTML(res.text)
-        post_url = f"https:{html.xpath('//form[@id=\"dl-form\"]/@action')[0]}"
+        action = html.xpath('//form[@id="dl-form"]/@action')[0]
+        post_url = f"https:{action}"
         token = html.xpath('//input[@id="dl-token"]/@value')[0]
         dl_link = sess.post(post_url, data={"token": token}).json()
         return dl_link["url"]
