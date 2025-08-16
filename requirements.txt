@@ -4,6 +4,7 @@ truelink
 pydantic
 aiohttp
 python-multipart
+pydantic
 requests
 cloudscraper
 psutil
