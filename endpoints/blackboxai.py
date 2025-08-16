@@ -2,6 +2,7 @@ from fastapi import APIRouter, UploadFile, File, Form, Query, HTTPException
 from fastapi.responses import JSONResponse
 import aiohttp
 import logging
+import os
 
 
 logger = logging.getLogger(__name__)
@@ -64,8 +65,6 @@ BLACKBOX_MODELS = [
 ]
 
 BLACKBOX_API_URL = "https://api.blackbox.ai/api"
-
-import os
 
 def get_headers():
     """Dynamically get headers with API key from environment"""
