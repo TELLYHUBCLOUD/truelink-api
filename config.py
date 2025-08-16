@@ -35,14 +35,14 @@ class Config:
     BLACKBOX_API_KEY = os.getenv("sk-DKQbJT2E-FrF1vZH51Vt6g")
     
     # Sensitive data (move to environment variables)
-    LARAVEL_SESSION = os.getenv("LARAVEL_SESSION")
-    XSRF_TOKEN = os.getenv("XSRF_TOKEN")
-    GDTOT_CRYPT = os.getenv("GDTOT_CRYPT")
-    HUBDRIVE_CRYPT = os.getenv("HUBDRIVE_CRYPT")
-    DRIVEFIRE_CRYPT = os.getenv("DRIVEFIRE_CRYPT")
-    KATDRIVE_CRYPT = os.getenv("KATDRIVE_CRYPT")
+    LARAVEL_SESSION = os.getenv("eyJpdiI6InlqZ3ZrcjBvTEM1NE9jQnpNM3phTlE9PSIsInZhbHVlIjoibThwemlnWEQ5TjYzaklQbmZwYkYyXC8xeEI5aHk3ZG1cL21hQlM5ZDU5RTE1c0EwOWlBUGE4SkVXUmozSkwyYm1CIiwibWFjIjoiZWQ5ZDFkMzdjNmY3ZmY2MDI0NTQ0MGI4ZTY5YjdjNjVlYzU3ZmEyY2ZjNzY2ZTI4ZDcxNjg4NTY5ZjQ4Yzk1ZiJ9")
+    XSRF_TOKEN = os.getenv("eyJpdiI6IjIwM2d4XC96U1hhYWNjdUhOSXl4RjRRPT0iLCJ2YWx1ZSI6Ilc5RFBGSTNhTWRvYjlzYkZHZDE0WXk2c3BRMFN1c1hXUVM1MVJnSmdoQm9kblwvdnlIa2YyNnRBVXpQeWd0ZUFKIiwibWFjIjoiMmZlNTNkNGU4YTkzNTQ1OTgyNmUxNzJiYzU4NzQyNGZjZGI3MjE4M2NmYjcxY2RiMWExN2RjNWRmN2M2ZGZkMCJ9")
+    GDTOT_CRYPT = os.getenv("b0lDek5LSCt6ZjVRR2EwZnY4T1EvVndqeDRtbCtTWmMwcGNuKy8wYWpDaz0%3D")
+    HUBDRIVE_CRYPT = os.getenv("N25hV1pxMXZWUTdFWEh6L2Q2WFJyQWo2NGJEcWN6R2E5ci91aG8zSFF5Zz0%3D")
+    DRIVEFIRE_CRYPT = os.getenv("cnhXOGVQNVlpeFZlM2lvTmN6Z2FPVWJiSjVBbWdVN0dWOEpvR3hHbHFLVT0%3D")
+    KATDRIVE_CRYPT = os.getenv("bzQySHVKSkY0bEczZHlqOWRsSHZCazBkOGFDak9HWXc1emRTL1F6Rm9ubz0%3D")
     DIRECT_INDEX = os.getenv("DIRECT_INDEX", "https://tellymirror.tellymirror.workers.dev")
-    TERA_COOKIE = os.getenv("TERA_COOKIE")
+    TERA_COOKIE = os.getenv("YvZNLrCteHuiHhOL5JkRGyt7mwk2eJ0crYm0-ZBu")
 
     @classmethod
     def validate(cls):
