@@ -4,12 +4,14 @@ uvicorn[standard]
 gunicorn
 uvloop
 orjson
+
 # Core
 pydantic
 aiohttp
 requests
 cloudscraper
 psutil
+
 # Web Scraping / Automation
 playwright
 bs4
@@ -17,18 +19,22 @@ lxml
 selenium
 webdriver-manager
 truelink
+
 # Security & Auth
 python-jose[cryptography]
 passlib[bcrypt]
+
 # Monitoring & Logging
 prometheus-client
 structlog
+
 # Development & Linting
 black
 flake8
 isort
 mypy
 bandit
+
 # Testing
 pytest
 pytest-asyncio
